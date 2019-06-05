@@ -12,3 +12,6 @@ block content
     input(type="password" name="password")
 
     button(class="submit" type="submit") Login
+
+    if loginError
+      p.error #{loginError}
