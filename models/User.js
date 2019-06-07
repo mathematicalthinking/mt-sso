@@ -19,6 +19,10 @@ const UserSchema = new Schema(
     encUserId: { type: ObjectId },
     vmtUserId: { type: ObjectId },
     email: { type: String },
+    firstName: { type: String },
+    lastName: { type: String },
+    googleId: { type: String },
+    googleProfilePic: { type: String },
     isTrashed: { type: Boolean, default: false },
   },
   { timestamps: true }
