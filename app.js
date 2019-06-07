@@ -7,8 +7,11 @@ const logger = require('morgan');
 
 require('dotenv').config();
 
+const { prepareRedirectURL } = require('./middleware/prep');
+
 const indexRouter = require('./routes/index');
 const loginRouter = require('./routes/login');
+const signupRouter = require('./routes/signup');
 
 const app = express();
 
@@ -33,8 +36,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// middleware
+app.use(prepareRedirectURL);
+
 app.use('/', indexRouter);
 app.use('/login', loginRouter);
+app.use('/signup', signupRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
