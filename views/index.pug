@@ -4,14 +4,5 @@ block content
   h1= title
   p Welcome to #{title}
 
-  form(method="POST" action='/login')
-    label(for="username") Username
-    input(type="text" name="username")
-
-    label(for="password") Password
-    input(type="password" name="password")
-
-    button(class="submit" type="submit") Login
-
-    if loginError
-      p.error #{loginError}
+  a(href="/login") Log In
+  a(href="/signup") Sign Up
