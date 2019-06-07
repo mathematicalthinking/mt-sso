@@ -5,10 +5,10 @@ const prepareRedirectURL = (req, res, next) => {
 
   let redirectApp = allowedDomains[redirectURL];
 
-  if (redirectApp) {
-    // set redirectURL on req
-    res.cookie('redirectURL', redirectURL);
-  }
+  let authRedirectURL = redirectApp === undefined ? '/' : redirectURL;
+
+  // set redirectURL on req
+  res.cookie('mt_sso_redirect', authRedirectURL);
   next();
 };
 

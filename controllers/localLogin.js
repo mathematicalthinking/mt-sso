@@ -18,8 +18,7 @@ const jwtLogin = async (req, res, next) => {
 
     res.cookie('mtToken', token);
 
-    // if no valid redirectURL provided, redirect to home page
-    let redirectURL = req.cookies.redirectURL || '/';
+    let redirectURL = req.cookies.mt_sso_redirect;
     return res.redirect(redirectURL);
   } catch (err) {
     console.log('err', err);

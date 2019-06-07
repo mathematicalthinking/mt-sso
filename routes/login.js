@@ -6,7 +6,7 @@ const allowedDomains = require('../constants/allowed_domains');
 const localLogin = require('../controllers/localLogin');
 
 router.get('/', (req, res, next) => {
-  let redirectURL = req.cookies.redirectURL;
+  let redirectURL = req.cookies.mt_sso_redirect;
 
   let explanation;
 
