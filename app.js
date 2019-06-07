@@ -12,6 +12,7 @@ const { prepareRedirectURL } = require('./middleware/prep');
 const indexRouter = require('./routes/index');
 const loginRouter = require('./routes/login');
 const signupRouter = require('./routes/signup');
+const oauthRouter = require('./routes/oauth');
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use(prepareRedirectURL);
 app.use('/', indexRouter);
 app.use('/login', loginRouter);
 app.use('/signup', signupRouter);
+app.use('/oauth', oauthRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
