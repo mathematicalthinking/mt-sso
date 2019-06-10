@@ -1,4 +1,5 @@
 const allowedDomains = require('../constants/allowed_domains');
+const { defaults } = require('lodash');
 
 const prepareRedirectURL = (req, res, next) => {
   let { redirectURL } = req.query;
@@ -12,4 +13,12 @@ const prepareRedirectURL = (req, res, next) => {
   next();
 };
 
+const prep = (req, res, next) => {
+  defaults(req, { mt: {} });
+  defaults(req.mt, { auth: {} });
+
+  return next();
+};
+
 module.exports.prepareRedirectURL = prepareRedirectURL;
+module.exports.prep = prep;

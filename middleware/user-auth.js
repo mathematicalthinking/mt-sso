@@ -56,5 +56,54 @@ const generateToken = async user => {
   return jwt.sign(payload, secret, options);
 };
 
+const getMtUser = async req => {
+  try {
+    let mtToken = req.cookies.mtToken;
+
+    if (!mtToken) {
+      return null;
+    }
+
+    // if token is not verified, error will be thrown
+    let verifiedToken = await jwt.verify(mtToken, secret);
+
+    return verifiedToken;
+  } catch (err) {
+    return null;
+  }
+};
+
+const prepareMtUser = (req, res, next) => {
+  return getMtUser(req)
+    .then(userDetails => {
+      // user is null or verified payload from jwt token
+      // set on request for later user
+
+      if (userDetails === null) {
+        req.mt.auth.user = null;
+        return next();
+      }
+
+      let { mtUserId } = userDetails;
+
+      return User.findById(mtUserId)
+        .lean()
+        .exec()
+        .then(user => {
+          req.mt.auth.user = user;
+          next();
+        });
+    })
+    .catch(err => {
+      next(err);
+    });
+};
+
+const getUser = req => {
+  return req.mt.auth.user;
+};
+
 module.exports.getUserFromLogin = getUserFromLogin;
 module.exports.generateToken = generateToken;
+module.exports.prepareMtUser = prepareMtUser;
+module.exports.getUser = getUser;
