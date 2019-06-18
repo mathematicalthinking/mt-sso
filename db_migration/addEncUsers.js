@@ -6,7 +6,7 @@ const { connect, find } = require('./utils');
 
 const getEncUsers = async (filter = {}) => {
   try {
-    const db = await connect('mongodb://localhost:27017/encompass');
+    const db = await connect('mongodb://localhost:27017/encompass_seed');
 
     return find(db, 'users', filter);
   } catch (err) {
@@ -23,7 +23,7 @@ async function addEncUsers() {
   try {
     let encUsers = await getEncUsers();
 
-    await connect('mongodb://localhost:27017/mtlogin');
+    await connect('mongodb://localhost:27017/mtlogin_test');
 
     let addedUsers = encUsers.map(async encUser => {
       let isAlreadyAdded = !isNull(
@@ -56,6 +56,12 @@ async function addEncUsers() {
         createdAt: encUser.createDate,
         updatedAt: encUser.lastModifiedDate,
         isTrashed: encUser.isTrashed,
+        confirmEmailExpires: encUser.confirmEmailExpires,
+        confirmEmailToken: encUser.confirmEmailToken,
+        resetPasswordToken: encUser.resetPasswordToken,
+        resetPasswordExpires: encUser.resetPasswordExpires,
+        isEmailConfirmed: encUser.isEmailConfirmed,
+        googleId: encUser.googleId,
       });
     });
 
@@ -75,7 +81,7 @@ async function addEncUsers() {
 
 const getVmtUsers = async (filter = {}) => {
   try {
-    const db = await connect('mongodb://localhost:27017/vmt');
+    const db = await connect('mongodb://localhost:27017/vmt-test');
 
     return find(db, 'users', filter);
   } catch (err) {
@@ -113,5 +119,5 @@ async function findDuplicateUsers() {
   }
 }
 
-// addEncUsers();
-findDuplicateUsers();
+addEncUsers();
+// findDuplicateUsers();
