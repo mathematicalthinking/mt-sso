@@ -8,20 +8,24 @@ const jwtLogin = async (req, res, next) => {
 
     if (user === null) {
       // send error
-      return res.render('login', {
-        title: 'Log in to your Mathematical Thinking account',
-        loginError: errorMessage,
+      return res.json({
+        user,
+        message: errorMessage,
       });
     }
 
     let token = await generateToken(user);
 
-    res.cookie('mtToken', token);
-
-    let redirectURL = req.cookies.mt_sso_redirect;
-    return res.redirect(redirectURL);
+    return res.json({
+      user,
+      message: errorMessage,
+      mtToken: token,
+    });
   } catch (err) {
     console.log('err', err);
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
