@@ -1,6 +1,5 @@
 const createError = require('http-errors');
 const express = require('express');
-const mongoose = require('mongoose');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
@@ -9,6 +8,9 @@ require('dotenv').config();
 
 const { prepareRedirectURL, prep } = require('./middleware/prep');
 const { prepareMtUser } = require('./middleware/user-auth');
+const configureCors = require('./middleware/cors');
+
+const initializeDb = require('./dbs/mt');
 
 const indexRouter = require('./routes/index');
 const loginRouter = require('./routes/login');
@@ -18,16 +20,7 @@ const logoutRouter = require('./routes/logout');
 
 const app = express();
 
-mongoose.connect(`mongodb://localhost:27017/mtlogin`, {
-  useNewUrlParser: true,
-});
-
-const db = mongoose.connection;
-
-db.on('error', function(err) {
-  console.trace(err);
-  throw new Error(err);
-});
+initializeDb();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -40,6 +33,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // middleware
+app.use(configureCors);
 app.use(prep);
 app.use(prepareMtUser);
 app.use(prepareRedirectURL);
