@@ -3,7 +3,10 @@ const router = express.Router();
 const axios = require('axios');
 
 const { handleUserProfile } = require('../controllers/oauth/google');
-const { generateToken } = require('../middleware/user-auth');
+const {
+  generateToken,
+  getAuthRedirectURL,
+} = require('../middleware/user-auth');
 
 router.get('/google', async (req, res, next) => {
   try {
@@ -54,7 +57,7 @@ router.get('/google/callback', async (req, res, next) => {
 
       res.cookie('mtToken', token);
 
-      let redirectURL = req.cookies.mt_sso_redirect;
+      let redirectURL = getAuthRedirectURL(req);
 
       return res.redirect(redirectURL);
     } else {
