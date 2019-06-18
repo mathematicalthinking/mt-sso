@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-// const localSignup = require('../controllers/localSignup');
+const localSignup = require('../controllers/localSignup');
 
 router.get('/', (req, res, next) => {
   res.render('signup', {
@@ -10,6 +10,7 @@ router.get('/', (req, res, next) => {
       'Both EnCOMPASS and VMT accounts will be automatically created for you',
   });
 });
-// router.post('/', localSignup);
+
+router.post('/', localSignup);
 
 module.exports = router;
