@@ -8,7 +8,10 @@ const getEncUrl = () => {
   if (envName === 'staging') {
     return process.env.ENC_URL_STAGING;
   }
-  return process.env.ENC_URL_DEV;
+
+  if (envName === 'test') {
+    return process.env.ENC_URL_TEST;
+  }
 };
 
 const getVmtUrl = () => {
