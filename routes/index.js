@@ -1,13 +1,11 @@
 const express = require('express');
 const router = express.Router();
 
-const { getUser } = require('../middleware/user-auth');
-const { getEncUrl, getVmtUrl } = require('../middleware/app_urls');
+const { getUser, getAuthRedirectURL } = require('../middleware/user-auth');
+const { getEncUrl, getVmtUrl } = require('../config/app_urls');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.cookie('redirectURL', req.query.redirectURL);
-
   let user = getUser(req);
   let vmtUrl = getVmtUrl();
   let encUrl = getEncUrl();
@@ -16,6 +14,12 @@ router.get('/', function(req, res, next) {
     return res.render('index', {
       title: 'Mathematical Thinking',
     });
+  }
+
+  let redirectURL = getAuthRedirectURL(req);
+
+  if (redirectURL) {
+    res.redirect(redirectURL);
   }
 
   let displayName = user.firstName ? user.firstName : user.username;

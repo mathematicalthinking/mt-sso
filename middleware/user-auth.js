@@ -18,7 +18,7 @@ const getUserFromLogin = (username, password) => {
     .then(userRecord => {
       if (userRecord === null) {
         return {
-          errorMessage: 'No user with that username',
+          errorMessage: 'Incorrect username',
           user: null,
         };
       }
@@ -31,7 +31,7 @@ const getUserFromLogin = (username, password) => {
         }
 
         return {
-          errorMessage: 'Invalid password',
+          errorMessage: 'Incorrect password',
           user: null,
         };
       });
@@ -103,7 +103,12 @@ const getUser = req => {
   return req.mt.auth.user;
 };
 
+const getAuthRedirectURL = req => {
+  return req.mt.auth.redirectURL;
+};
+
 module.exports.getUserFromLogin = getUserFromLogin;
 module.exports.generateToken = generateToken;
 module.exports.prepareMtUser = prepareMtUser;
 module.exports.getUser = getUser;
+module.exports.getAuthRedirectURL = getAuthRedirectURL;

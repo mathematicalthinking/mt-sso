@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
 
+const { getAuthRedirectURL } = require('../middleware/user-auth');
+
 const allowedDomains = require('../constants/allowed_domains');
 
 const localLogin = require('../controllers/localLogin');
 
 router.get('/', (req, res, next) => {
-  let redirectURL = req.cookies.mt_sso_redirect;
+  let redirectURL = getAuthRedirectURL(req);
 
   let explanation;
 
