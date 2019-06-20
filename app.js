@@ -17,6 +17,7 @@ const loginRouter = require('./routes/login');
 const signupRouter = require('./routes/signup');
 const oauthRouter = require('./routes/oauth');
 const logoutRouter = require('./routes/logout');
+const forgotRouter = require('./routes/forgot');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/login', loginRouter);
 app.use('/signup', signupRouter);
 app.use('/oauth', oauthRouter);
 app.use('/logout', logoutRouter);
+app.use('/forgot', forgotRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
