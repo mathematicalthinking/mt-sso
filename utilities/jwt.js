@@ -39,3 +39,13 @@ module.exports.extractBearerToken = req => {
   }
   return authorization.split(' ')[1];
 };
+
+module.exports.getVerifiedApiJWT = req => {
+  let authToken = this.extractBearerToken(req);
+  try {
+    return jwt.verify(authToken, SSOSecret);
+  } catch (err) {
+    // invalid token
+    return null;
+  }
+};
