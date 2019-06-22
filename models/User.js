@@ -13,8 +13,7 @@ const UserSchema = new Schema(
       type: String,
       validate: {
         validator: email => {
-          // eslint-disable-next-line no-useless-escape
-          let emailRegex = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+          let emailRegex = /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/;
           return emailRegex.test(email);
         },
         message: '{VALUE} is not a valid email address',
@@ -31,6 +30,7 @@ const UserSchema = new Schema(
     confirmEmailExpires: { type: Date },
     isEmailConfirmed: { type: Boolean, default: false },
     doForcePasswordChange: { type: Boolean, default: false },
+    lastModifiedBy: { type: ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
