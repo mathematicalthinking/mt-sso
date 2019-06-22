@@ -6,7 +6,7 @@ const { connect, find } = require('./utils');
 
 const getvmtUsers = async () => {
   try {
-    const db = await connect('mongodb://localhost:27017/vmt');
+    const db = await connect('mongodb://localhost:27017/vmt-test');
 
     return find(db, 'users');
   } catch (err) {
@@ -26,7 +26,7 @@ async function addVmtUsers() {
     // close connection to vmt
     mongoose.connection.close();
 
-    await connect('mongodb://localhost:27017/mtlogin');
+    await connect('mongodb://localhost:27017/mtlogin_test');
 
     let addedUsers = vmtUsers.map(async vmtUser => {
       let isAlreadyAdded = !_.isNull(
@@ -60,6 +60,7 @@ async function addVmtUsers() {
         createdAt: vmtUser.createdAt,
         updatedAt: vmtUser.updatedAt,
         isTrashed: vmtUser.isTrashed,
+        isEmailConfirmed: true,
       });
     });
 

@@ -1,22 +1,32 @@
 const { getUserFromLogin, generateToken } = require('../middleware/user-auth');
 
 const jwtLogin = async (req, res, next) => {
-  let { username, password } = req.body;
+  try {
+    let { username, password } = req.body;
 
-  let { user, errorMessage } = await getUserFromLogin(username, password);
+    let { user, errorMessage } = await getUserFromLogin(username, password);
 
-  if (user === null) {
-    // send error
-    res.render('index', { title: 'Express', loginError: errorMessage });
+    if (user === null) {
+      // send error
+      return res.json({
+        user,
+        message: errorMessage,
+      });
+    }
+
+    let token = await generateToken(user);
+
+    return res.json({
+      user,
+      message: errorMessage,
+      mtToken: token,
+    });
+  } catch (err) {
+    console.log('err', err);
+    return res.status(500).json({
+      message: err.message,
+    });
   }
-
-  let token = await generateToken(user);
-
-  let redirectURL = req.cookies.redirectURL;
-
-  res.cookie('mtToken', token);
-
-  res.redirect(redirectURL);
 };
 
 module.exports = jwtLogin;

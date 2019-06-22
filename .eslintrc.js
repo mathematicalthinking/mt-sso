@@ -12,7 +12,7 @@ module.exports = {
 },
   rules: {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs // e.g. "@typescript-eslint/explicit-function-return-type": "off",
-    "no-unused-vars": "warn",
+    "no-unused-vars": ["warn", { "args": "none" }],
     "no-console": "off",
   },
 };

@@ -3,23 +3,34 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const ObjectId = Schema.ObjectId;
 
-/**
- * @public
- * @class User
- * @class User
- * @description A user is created by signup using passport and authorized by admin
- * @todo We need to decide how to handle different user types/roles
- */
 const UserSchema = new Schema(
   {
-    username: { type: String, trim: true },
+    username: { type: String, trim: true, required: true },
     password: { type: String },
-    mtToken: { type: String },
-    mtTokenExpiryDate: { type: Date },
     encUserId: { type: ObjectId },
     vmtUserId: { type: ObjectId },
-    email: { type: String },
+    email: {
+      type: String,
+      validate: {
+        validator: email => {
+          let emailRegex = /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+          return emailRegex.test(email);
+        },
+        message: '{VALUE} is not a valid email address',
+      },
+    },
+    firstName: { type: String },
+    lastName: { type: String },
+    googleId: { type: String },
+    googleProfilePic: { type: String },
     isTrashed: { type: Boolean, default: false },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+    confirmEmailToken: { type: String },
+    confirmEmailExpires: { type: Date },
+    isEmailConfirmed: { type: Boolean, default: false },
+    doForcePasswordChange: { type: Boolean, default: false },
+    lastModifiedBy: { type: ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );

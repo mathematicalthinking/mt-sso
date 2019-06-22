@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  h3=title
+  p=explanation
+
+  form(method="POST" action='/signup')
+    label(for="username") Username
+    input(type="text" name="username")
+
+    label(for="password") Password
+    input(type="password" name="password")
+
+    label(for="confirm-password") Confirm Password
+    input(type="password" name="confirm-password")
+
+    button(class="submit" type="submit") Sign Up
+
+    if signupError
+      p.error #{signupError}

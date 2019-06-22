@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
-const _ = require('lodash');
+const { isNull, compact } = require('lodash');
 
 const mtUser = require('../models/User');
 const { connect, find } = require('./utils');
 
-const getEncUsers = async () => {
+const getEncUsers = async (filter = {}) => {
   try {
-    const db = await connect('mongodb://localhost:27017/encompass');
+    const db = await connect('mongodb://localhost:27017/encompass_seed');
 
-    return find(db, 'users');
+    return find(db, 'users', filter);
   } catch (err) {
     console.error(`Error addEncUsers: ${err}`);
     mongoose.connection.close();
@@ -23,10 +23,10 @@ async function addEncUsers() {
   try {
     let encUsers = await getEncUsers();
 
-    await connect('mongodb://localhost:27017/mtlogin');
+    await connect('mongodb://localhost:27017/mtlogin_test');
 
     let addedUsers = encUsers.map(async encUser => {
-      let isAlreadyAdded = !_.isNull(
+      let isAlreadyAdded = !isNull(
         await mtUser.findOne({ encUserId: encUser._id })
       );
 
@@ -56,6 +56,12 @@ async function addEncUsers() {
         createdAt: encUser.createDate,
         updatedAt: encUser.lastModifiedDate,
         isTrashed: encUser.isTrashed,
+        confirmEmailExpires: encUser.confirmEmailExpires,
+        confirmEmailToken: encUser.confirmEmailToken,
+        resetPasswordToken: encUser.resetPasswordToken,
+        resetPasswordExpires: encUser.resetPasswordExpires,
+        isEmailConfirmed: encUser.isEmailConfirmed,
+        googleId: encUser.googleId,
       });
     });
 
@@ -73,4 +79,45 @@ async function addEncUsers() {
   }
 }
 
+const getVmtUsers = async (filter = {}) => {
+  try {
+    const db = await connect('mongodb://localhost:27017/vmt-test');
+
+    return find(db, 'users', filter);
+  } catch (err) {
+    console.error(`Error addVmtUsers: ${err}`);
+    mongoose.connection.close();
+  }
+};
+
+async function findDuplicateUsers() {
+  try {
+    let vmtUsers = await getVmtUsers({ accountType: { $ne: 'temp' } });
+
+    let vmtUsernames = vmtUsers.map(user => user.username);
+    let vmtEmails = vmtUsers.map(user => user.email);
+
+    let duplicates = await getEncUsers({ username: { $in: vmtUsernames } });
+
+    let duplicatesByEmauls = await getEncUsers({ email: { $in: vmtEmails } });
+
+    console.log('usernames', duplicates.map(u => u.username));
+
+    console.log('dupes by emails', duplicatesByEmauls.map(u => u.email));
+
+    let encUsers = await getEncUsers();
+
+    let encUserNames = compact(encUsers.map(u => u.name));
+
+    let oneName = encUserNames.filter(n => {
+      let split = n.split(' ');
+      return split.length === 1;
+    });
+    console.log('oneNames', oneName);
+  } catch (err) {
+    console.log('err find duplicate users: ', err);
+  }
+}
+
 addEncUsers();
+// findDuplicateUsers();
