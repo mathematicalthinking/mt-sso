@@ -112,32 +112,25 @@ const localSignup = async (req, res, next) => {
 
     let prunedUsername = username.trim().toLowerCase();
 
+    let filter = { username: prunedUsername };
+
     let isEmailValid = validateEmailAddress(email);
 
-    let promises = [
-      User.findOne({ username: prunedUsername })
-        .lean()
-        .exec(),
-    ];
-
     if (isEmailValid) {
-      promises.push(
-        User.findOne({ email })
-          .lean()
-          .exec()
-      );
+      filter = {
+        $or: [{ username: prunedUsername }, { email }],
+      };
     }
 
-    let [existingUsernameUser, existingEmailUser] = await Promise.all(promises);
+    let existingUser = await User.findOne(filter);
 
-    let isUsernameTaken = existingUsernameUser !== null;
-    let isEmailTaken = isEmailValid && existingEmailUser !== null;
+    if (existingUser !== null) {
+      // Username or email is taken
+      let isUsernameTaken = existingUser.username === prunedUsername;
 
-    if (isUsernameTaken || isEmailTaken) {
-      // Username is taken
       let noun = isUsernameTaken ? 'username' : 'email address';
       let message = `There already exists a user with that ${noun}`;
-      return res.json({ message });
+      return res.json({ message, existingUser });
     }
 
     if (typeof password !== 'string' || password.length < MIN_PASS_LENGTH) {
@@ -172,10 +165,11 @@ const localSignup = async (req, res, next) => {
 
     let results = {
       mtToken,
+      encUser,
+      vmtUser,
     };
     res.json(results);
   } catch (err) {
-    console.log('err mt signup', err.message, err);
     res.json({ errorMessage: err.message });
   }
 
