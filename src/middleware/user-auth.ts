@@ -7,16 +7,9 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import { VerifiedMtTokenPayload, UserDocument } from '../types';
 
-import { verifyJWT } from '../utilities/jwt';
+import { verifyJWT, extractBearerToken } from '../utilities/jwt';
 
 const secret = process.env.MT_USER_JWT_SECRET || '';
-
-// const comparePasswords = (
-//   candidatePassword: any,
-//   user: UserDocument
-// ): boolean => {
-//   return compare(candidatePassword, user.password);
-// };
 
 interface LoginResult {
   user: null | UserDocument;
@@ -91,8 +84,7 @@ export const getMtUser = async (
   req: express.Request
 ): Promise<VerifiedMtTokenPayload | null> => {
   try {
-    let mtToken = req.cookies.mtToken;
-
+    let mtToken = extractBearerToken(req);
     if (!mtToken) {
       return null;
     }
@@ -118,8 +110,9 @@ export const prepareMtUser = async (
   let { mtUserId } = verifiedPayload;
 
   let mtUser: UserDocument | null = await User.findById(mtUserId).lean();
-
-  req.mt.auth.user = mtUser !== null ? mtUser : undefined;
+  if (mtUser !== null) {
+    req.mt.auth.user = mtUser;
+  }
   next();
 };
 

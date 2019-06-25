@@ -3,7 +3,7 @@ import * as express from 'express';
 import axios, { AxiosResponse } from 'axios';
 import User from '../models/User';
 
-import { generateToken } from '../middleware/user-auth';
+import { generateToken, getUser } from '../middleware/user-auth';
 import { getEncUrl, getVmtUrl } from '../config/app_urls';
 import { generateAPIToken } from '../utilities/jwt';
 import {
@@ -18,7 +18,7 @@ import {
 const MIN_PASS_LENGTH = 4;
 
 function validateEmailAddress(email: string): boolean {
-  let emailRegex = /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+  let emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
   return emailRegex.test(email);
 }
 
@@ -50,7 +50,11 @@ const createEncUser = async (
     createdBy,
     authorizedBy,
     isEmailConfirmed,
+    accountType,
   } = requestBody;
+
+  let allowedAccountTypes = ['S', 'T', 'P', 'A'];
+  let isValidEncAccountType = allowedAccountTypes.includes(accountType);
 
   let encUserBody: EncSignUpDetails = {
     firstName,
@@ -63,7 +67,7 @@ const createEncUser = async (
     location,
     isAuthorized,
     requestReason,
-    accountType: 'T',
+    accountType: isValidEncAccountType ? accountType : 'T',
     createdBy,
     authorizedBy,
     isEmailConfirmed,
@@ -127,9 +131,14 @@ const localSignup = async (
   next: express.NextFunction
 ): Promise<void> => {
   try {
-    let { firstName, lastName, username, password, email } = req.body;
+    let currentUser = getUser(req);
 
-    console.log('IN LS USERNAME: ', req.body);
+    // Do not want to login a user who is being created by a currently logged in user
+    // Currently only comes from encompass
+
+    let doLoginNewUser = currentUser === undefined;
+
+    let { firstName, lastName, username, password, email } = req.body;
 
     if (typeof username !== 'string') {
       let message = 'Invalid Username';
@@ -148,9 +157,7 @@ const localSignup = async (
         $or: [{ username: prunedUsername }, { email }],
       };
     }
-    console.log('FILTER', filter);
     let existingUser = await User.findOne(filter);
-    console.log('existingUser: ', existingUser);
     if (existingUser !== null) {
       // Username or email is taken
       let isUsernameTaken = existingUser.username === prunedUsername;
@@ -189,8 +196,12 @@ const localSignup = async (
 
     await mtUser.save();
 
-    let mtToken = await generateToken(mtUser);
-    res.cookie('mtToken', mtToken);
+    let mtToken;
+
+    if (doLoginNewUser) {
+      mtToken = await generateToken(mtUser);
+      res.cookie('mtToken', mtToken);
+    }
 
     let results = {
       mtToken,
