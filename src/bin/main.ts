@@ -8,13 +8,8 @@ const app = express();
 
 configure(app);
 
-let port: number | string | undefined;
+let port = process.env.PORT || 3002;
 
-if (process.env.NODE_ENV === 'test') {
-  port = process.env.TEST_PORT;
-} else {
-  port = process.env.PORT || 3002;
-}
 app.listen(
   port,
   (): void => {

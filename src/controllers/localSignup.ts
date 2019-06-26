@@ -4,7 +4,6 @@ import axios, { AxiosResponse } from 'axios';
 import User from '../models/User';
 
 import { generateToken, getUser } from '../middleware/user-auth';
-import { getEncUrl, getVmtUrl } from '../config/app_urls';
 import { generateAPIToken } from '../utilities/jwt';
 import {
   UserDocument,
@@ -13,6 +12,8 @@ import {
   SignUpDetails,
   EncSignUpDetails,
   VmtSignupDetails,
+  VmtAccountType,
+  EncAccountType,
 } from '../types';
 
 const MIN_PASS_LENGTH = 4;
@@ -22,11 +23,51 @@ function validateEmailAddress(email: string): boolean {
   return emailRegex.test(email);
 }
 
+const resolveVmtAccountType = (
+  mtUser: UserDocument,
+  requestBody: any
+): string => {
+  let isGoogleSignup = mtUser.googleId !== undefined;
+
+  if (isGoogleSignup) {
+    // default to facilitator for google signups
+    return VmtAccountType.facilitator;
+  }
+
+  let accountType;
+
+  accountType = VmtAccountType[requestBody.accountType];
+
+  // default to facilitator if not valid vmt account
+  // i.e. if request originated from encompass
+  return accountType === undefined ? VmtAccountType.facilitator : accountType;
+};
+
+const resolveEncAccountType = (
+  mtUser: UserDocument,
+  requestBody: any
+): string => {
+  let isGoogleSignup = mtUser.googleId !== undefined;
+
+  if (isGoogleSignup) {
+    // default to teacher for google signups
+    return EncAccountType.T;
+  }
+
+  let accountType;
+
+  accountType = EncAccountType[requestBody.accountType];
+
+  // default to teacher if not valid enc account type
+  // i.e. if request originated from vmt
+  return accountType === undefined ? EncAccountType.T : accountType;
+};
+
 const createMtUser = (userDetails: SignUpDetails): Promise<UserDocument> => {
   return User.create(userDetails);
 };
 
-const createEncUser = async (
+export const createEncUser = async (
   mtUser: UserDocument,
   requestBody: any,
   apiToken: string
@@ -39,6 +80,7 @@ const createEncUser = async (
     _id,
     createdAt,
     updatedAt,
+    isEmailConfirmed,
   } = mtUser;
 
   let {
@@ -49,12 +91,9 @@ const createEncUser = async (
     requestReason,
     createdBy,
     authorizedBy,
-    isEmailConfirmed,
-    accountType,
   } = requestBody;
 
-  let allowedAccountTypes = ['S', 'T', 'P', 'A'];
-  let isValidEncAccountType = allowedAccountTypes.includes(accountType);
+  let accountType = resolveEncAccountType(mtUser, requestBody);
 
   let encUserBody: EncSignUpDetails = {
     firstName,
@@ -67,16 +106,18 @@ const createEncUser = async (
     location,
     isAuthorized,
     requestReason,
-    accountType: isValidEncAccountType ? accountType : 'T',
+    accountType,
     createdBy,
     authorizedBy,
     isEmailConfirmed,
-    actingRole: 'teacher',
+    actingRole: accountType === 'S' ? 'student' : 'teacher',
     createDate: createdAt,
     lastModifiedDate: updatedAt,
   };
 
-  let encApiUrl = `${getEncUrl()}/auth/newMtUser`;
+  // Should we use create date of SSO account? or Date.now()? ...
+
+  let encApiUrl = `${process.env.ENC_URL}/auth/newMtUser`;
 
   let config = {
     headers: { Authorization: 'Bearer ' + apiToken },
@@ -89,20 +130,14 @@ const createEncUser = async (
   );
 };
 
-const createVmtUser = (
+export const createVmtUser = (
   mtUser: UserDocument,
   requestBody: any,
   apiToken: string
 ): Promise<VmtUserDocument> => {
-  let { firstName, lastName, username, email, _id } = mtUser;
+  let { firstName, lastName, username, email, _id, isEmailConfirmed } = mtUser;
 
-  let { accountType } = requestBody;
-
-  let allowedAccountTypes = ['facilitator', 'participant'];
-
-  if (!allowedAccountTypes.includes(accountType)) {
-    accountType = 'facilitator';
-  }
+  let accountType = resolveVmtAccountType(mtUser, requestBody);
 
   let vmtUserBody: VmtSignupDetails = {
     firstName,
@@ -111,9 +146,10 @@ const createVmtUser = (
     email,
     mtUserId: _id,
     accountType,
+    isEmailConfirmed,
   };
 
-  let vmtApiUrl = `${getVmtUrl()}/auth/newMtUser`;
+  let vmtApiUrl = `${process.env.VMT_URL}/auth/newMtUser`;
   let config = {
     headers: { Authorization: 'Bearer ' + apiToken },
   };

@@ -12,6 +12,29 @@ declare global {
       };
     }
   }
+  namespace NodeJS {
+    interface ProcessEnv {
+      NODE_ENV: 'development' | 'production' | 'staging' | 'test';
+      DEFAULT_REDIRECT_URL: string;
+      GOOGLE_CLIENT_ID: string;
+      GOOGLE_CLIENT_SECRET: string;
+      GOOGLE_CALLBACK_URL: string;
+      PORT: string;
+      MT_USER_JWT_SECRET: string;
+      MT_DB_URI: string;
+      JWT_ISSUER_ID: string;
+      ENC_URL: string;
+      ENC_PATH_TO_MODELS: string;
+      ENC_GMAIL_USERNAME: string;
+      ENC_GMAIL_PASSWORD: string;
+      ENC_JWT_ISSUER_ID: string;
+      VMT_URL: string;
+      VMT_PATH_TO_MODELS: string;
+      VMT_GMAIL_USERNAME: string;
+      VMT_GMAIL_PASSWORD: string;
+      VMT_JWT_ISSUER_ID: string;
+    }
+  }
 }
 
 export type MongooseOId = mongoose.Types.ObjectId;
@@ -49,6 +72,7 @@ export type UserDocument = mongoose.Document & {
   updatedAt: Date;
   createdAt: Date;
   isTrashed: boolean;
+  [field: string]: string | MongooseOId | undefined | number | Date | boolean;
 };
 
 export type EmailTemplateGenerator = (
@@ -120,6 +144,7 @@ export interface VmtSignupDetails {
   email?: string;
   mtUserId?: MongooseOId;
   accountType: string;
+  isEmailConfirmed: boolean;
 }
 
 export interface SignUpDetails {
@@ -143,4 +168,16 @@ export interface GoogleOauthProfileResponse {
   family_name: string;
   picture?: string;
   email: string;
+}
+
+export enum VmtAccountType {
+  participant = 'particpant',
+  facilitator = 'facilitator',
+}
+
+export enum EncAccountType {
+  S = 'S',
+  T = 'T',
+  P = 'P',
+  A = 'A',
 }
