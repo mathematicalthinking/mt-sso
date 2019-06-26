@@ -1,7 +1,5 @@
 import * as express from 'express';
 
-import { getEncUrl, getVmtUrl } from '../config/app_urls';
-
 export default (
   req: express.Request,
   res: express.Response,
@@ -10,7 +8,7 @@ export default (
   // Website you wish to allow to connect
   res.setHeader(
     'Access-Control-Allow-Origin',
-    `${getEncUrl()}, ${getVmtUrl()}`
+    `${process.env.ENC_URL}, ${process.env.VMT_URL}`
   );
   // Request methods you wish to allow
   res.setHeader(

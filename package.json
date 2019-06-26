@@ -8,7 +8,7 @@
     "compile:watch": "tsc --watch",
     "compile": "tsc && node dist/bin/main",
     "dev": "nodemon -e ts --exec \"npm run compile\"",
-    "test": "npm run seed && NODE_ENV=test PORT=$TEST_PORT npm run dev",
+    "test": "npm run seed && NODE_ENV=test npm run dev",
     "seed": "node dist/test/seedDb"
   },
   "dependencies": {

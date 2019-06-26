@@ -12,6 +12,29 @@ declare global {
       };
     }
   }
+  namespace NodeJS {
+    interface ProcessEnv {
+      NODE_ENV: 'development' | 'production' | 'staging' | 'test';
+      DEFAULT_REDIRECT_URL: string;
+      GOOGLE_CLIENT_ID: string;
+      GOOGLE_CLIENT_SECRET: string;
+      GOOGLE_CALLBACK_URL: string;
+      PORT: string;
+      MT_USER_JWT_SECRET: string;
+      MT_DB_URI: string;
+      JWT_ISSUER_ID: string;
+      ENC_URL: string;
+      ENC_PATH_TO_MODELS: string;
+      ENC_GMAIL_USERNAME: string;
+      ENC_GMAIL_PASSWORD: string;
+      ENC_JWT_ISSUER_ID: string;
+      VMT_URL: string;
+      VMT_PATH_TO_MODELS: string;
+      VMT_GMAIL_USERNAME: string;
+      VMT_GMAIL_PASSWORD: string;
+      VMT_JWT_ISSUER_ID: string;
+    }
+  }
 }
 
 export type MongooseOId = mongoose.Types.ObjectId;

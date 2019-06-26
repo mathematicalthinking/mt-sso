@@ -9,27 +9,11 @@ import { VerifiedMtTokenPayload, UserDocument } from '../types';
 
 import { verifyJWT, extractBearerToken } from '../utilities/jwt';
 
-const secret = process.env.MT_USER_JWT_SECRET || '';
+const secret = process.env.MT_USER_JWT_SECRET;
 
 interface LoginResult {
   user: null | UserDocument;
   errorMessage: null | string;
-}
-
-const LoginRequestSchema = Joi.object().keys({
-  username: Joi.string()
-    .min(1)
-    .max(100)
-    .required(),
-  password: Joi.string()
-    .min(4)
-    .max(72)
-    .required(),
-});
-
-interface LoginRequest {
-  username: string;
-  password: string;
 }
 
 export const getUserFromLogin = async (

@@ -1,15 +1,7 @@
 import mongoose from 'mongoose';
 
 export default (): void => {
-  let env = process.env.NODE_ENV;
-  let uri: string | undefined;
-  console.log('env', env);
-  if (env === 'test') {
-    uri = process.env.MT_DB_URI_TEST;
-  } else {
-    uri = process.env.MT_DB_URI;
-  }
-
+  let uri = process.env.MT_DB_URI;
   if (typeof uri !== 'string') {
     return;
   }

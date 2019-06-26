@@ -8,10 +8,9 @@ export const prepareRedirectURL = (
   next: NextFunction
 ): void => {
   let { redirectURL } = req.query;
-
   let authRedirectURL = allowedDomains.includes(redirectURL)
     ? redirectURL
-    : '/';
+    : process.env.DEFAULT_REDIRECT_URL;
 
   // set redirectURL on req
 

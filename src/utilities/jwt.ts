@@ -3,7 +3,7 @@ import * as express from 'express';
 
 import { MongooseOId, UserDocument, VerifiedMtTokenPayload } from '../types';
 
-const SSOSecret = process.env.MT_USER_JWT_SECRET || '';
+const SSOSecret = process.env.MT_USER_JWT_SECRET;
 
 const SSO_TOKEN_EXPIRY = '1d';
 const API_TOKEN_EXPIRY = 6000; // 30m
