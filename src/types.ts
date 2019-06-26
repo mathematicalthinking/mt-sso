@@ -49,6 +49,7 @@ export type UserDocument = mongoose.Document & {
   updatedAt: Date;
   createdAt: Date;
   isTrashed: boolean;
+  [field: string]: string | MongooseOId | undefined | number | Date | boolean;
 };
 
 export type EmailTemplateGenerator = (
@@ -120,6 +121,7 @@ export interface VmtSignupDetails {
   email?: string;
   mtUserId?: MongooseOId;
   accountType: string;
+  isEmailConfirmed: boolean;
 }
 
 export interface SignUpDetails {
@@ -143,4 +145,16 @@ export interface GoogleOauthProfileResponse {
   family_name: string;
   picture?: string;
   email: string;
+}
+
+export enum VmtAccountType {
+  participant = 'particpant',
+  facilitator = 'facilitator',
+}
+
+export enum EncAccountType {
+  S = 'S',
+  T = 'T',
+  P = 'P',
+  A = 'A',
 }
