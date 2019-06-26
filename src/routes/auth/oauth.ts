@@ -9,6 +9,8 @@ import {
   GoogleOauthTokenResponse,
   GoogleOauthProfileResponse,
 } from '../../types';
+import { generateAPIToken } from '../../utilities/jwt';
+import { createEncUser, createVmtUser } from '../../controllers/localSignup';
 
 router.get(
   '/google',
@@ -23,10 +25,12 @@ router.get(
       let clientId = process.env.GOOGLE_CLIENT_ID;
       let responseType = 'code';
       let scope = 'profile%20email';
-      let redirectURI = process.env.GOOGLE_CALLBACK_URL_DEV;
+      let redirectURI = process.env.GOOGLE_CALLBACK_URL;
       let includeScopes = true;
 
       let url = `${googleEndpoint}?client_id=${clientId}&response_type=${responseType}&scope=${scope}&redirect_uri=${redirectURI}&include_granted_scopes=${includeScopes}`;
+
+      res.cookie('redirectURL', getAuthRedirectURL(req));
 
       res.redirect(url);
     } catch (err) {
@@ -56,7 +60,7 @@ router.get(
           code,
           client_id: process.env.GOOGLE_CLIENT_ID,
           client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          redirect_uri: 'http://localhost:3002/oauth/google/callback',
+          redirect_uri: process.env.GOOGLE_CALLBACK_URL,
           grant_type: 'authorization_code',
         };
 
@@ -77,17 +81,29 @@ router.get(
         let profile: GoogleOauthProfileResponse = profileResults.data;
 
         let mtUser = await handleUserProfile(profile);
+
+        let apiToken = await generateAPIToken(mtUser._id);
+
+        let [encUser, vmtUser] = await Promise.all([
+          createEncUser(mtUser, req.body, apiToken),
+          createVmtUser(mtUser, req.body, apiToken),
+        ]);
+
+        mtUser.encUserId = encUser._id;
+        mtUser.vmtUserId = vmtUser._id;
+
+        await mtUser.save();
+
         let token = await generateToken(mtUser);
 
         res.cookie('mtToken', token);
 
-        let redirectURL = getAuthRedirectURL(req) || '/';
+        let redirectURL = req.cookies.redirectURL || '/';
 
         res.redirect(redirectURL);
       }
     } catch (err) {
       next(err);
-      console.log('err google callback', err);
     }
   }
 );
