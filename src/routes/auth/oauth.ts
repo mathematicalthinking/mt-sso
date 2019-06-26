@@ -11,6 +11,7 @@ import {
 } from '../../types';
 import { generateAPIToken } from '../../utilities/jwt';
 import { createEncUser, createVmtUser } from '../../controllers/localSignup';
+import { isNil } from 'lodash';
 
 router.get(
   '/google',
@@ -82,23 +83,36 @@ router.get(
 
         let mtUser = await handleUserProfile(profile);
 
-        let apiToken = await generateAPIToken(mtUser._id);
+        // What is best way to know if user is signing in with google for the first time?
+        // Should never have only one of encUserId / vmtUserId ... but what if one failed for some reason?
 
-        let [encUser, vmtUser] = await Promise.all([
-          createEncUser(mtUser, req.body, apiToken),
-          createVmtUser(mtUser, req.body, apiToken),
-        ]);
+        let isNewUser = isNil(mtUser.encUserId);
+        console.log(
+          `Is ${
+            mtUser.username
+          } a new user signing in with google? ${isNewUser}`
+        );
 
-        mtUser.encUserId = encUser._id;
-        mtUser.vmtUserId = vmtUser._id;
+        if (isNewUser) {
+          let apiToken = await generateAPIToken(mtUser._id);
 
-        await mtUser.save();
+          let [encUser, vmtUser] = await Promise.all([
+            createEncUser(mtUser, req.body, apiToken),
+            createVmtUser(mtUser, req.body, apiToken),
+          ]);
+
+          mtUser.encUserId = encUser._id;
+          mtUser.vmtUserId = vmtUser._id;
+
+          await mtUser.save();
+        }
 
         let token = await generateToken(mtUser);
 
         res.cookie('mtToken', token);
 
-        let redirectURL = req.cookies.redirectURL || '/';
+        let redirectURL =
+          req.cookies.redirectURL || process.env.DEFAULT_REDIRECT_URL;
 
         res.redirect(redirectURL);
       }
