@@ -3,8 +3,13 @@ import express from 'express';
 import { join } from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
+import path from 'path';
 
-require('dotenv').config();
+let envFileName = process.env.NODE_ENV === 'test' ? '.env_test' : '.env';
+
+let pathToEnvFile = path.resolve(process.cwd(), envFileName);
+
+require('dotenv').config({ path: pathToEnvFile });
 
 import { prepareRedirectURL, prep } from './middleware/prep';
 import { prepareMtUser } from './middleware/user-auth';
