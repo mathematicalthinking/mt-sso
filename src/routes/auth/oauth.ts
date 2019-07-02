@@ -9,7 +9,7 @@ import {
   GoogleOauthTokenResponse,
   GoogleOauthProfileResponse,
 } from '../../types';
-import { generateAPIToken } from '../../utilities/jwt';
+import { generateAPIToken, setSsoCookie } from '../../utilities/jwt';
 import { createEncUser, createVmtUser } from '../../controllers/localSignup';
 import { isNil } from 'lodash';
 
@@ -18,7 +18,7 @@ router.get(
   async (
     req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    next: express.NextFunction,
   ): Promise<void> => {
     try {
       let googleEndpoint = `https://accounts.google.com/o/oauth2/v2/auth`;
@@ -31,13 +31,16 @@ router.get(
 
       let url = `${googleEndpoint}?client_id=${clientId}&response_type=${responseType}&scope=${scope}&redirect_uri=${redirectURI}&include_granted_scopes=${includeScopes}`;
 
-      res.cookie('redirectURL', getAuthRedirectURL(req));
+      res.cookie('redirectURL', getAuthRedirectURL(req), {
+        httpOnly: true,
+        maxAge: 3600,
+      });
 
       res.redirect(url);
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
@@ -45,7 +48,7 @@ router.get(
   async (
     req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    next: express.NextFunction,
   ): Promise<void> => {
     try {
       let { code } = req.query;
@@ -90,15 +93,15 @@ router.get(
         console.log(
           `Is ${
             mtUser.username
-          } a new user signing in with google? ${isNewUser}`
+          } a new user signing in with google? ${isNewUser}`,
         );
 
         if (isNewUser) {
           let apiToken = await generateAPIToken(mtUser._id);
 
           let [encUser, vmtUser] = await Promise.all([
-            createEncUser(mtUser, req.body, apiToken),
-            createVmtUser(mtUser, req.body, apiToken),
+            createEncUser(mtUser, null, apiToken, 'google'),
+            createVmtUser(mtUser, null, apiToken, 'google'),
           ]);
 
           mtUser.encUserId = encUser._id;
@@ -109,7 +112,7 @@ router.get(
 
         let token = await generateToken(mtUser);
 
-        res.cookie('mtToken', token);
+        setSsoCookie(res, token);
 
         let redirectURL =
           req.cookies.redirectURL || process.env.DEFAULT_REDIRECT_URL;
@@ -119,7 +122,7 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 export default router;

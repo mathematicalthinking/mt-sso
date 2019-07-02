@@ -11,7 +11,7 @@ let pathToEnvFile = path.resolve(process.cwd(), envFileName);
 
 require('dotenv').config({ path: pathToEnvFile });
 
-import { prepareRedirectURL, prep } from './middleware/prep';
+import { prepareRedirectURL, prep, pruneRequestBody } from './middleware/prep';
 import { prepareMtUser } from './middleware/user-auth';
 import configureCors from './middleware/cors';
 
@@ -35,6 +35,7 @@ const configure = (app: express.Application): void => {
   app.use(prep);
   app.use(prepareMtUser);
   app.use(prepareRedirectURL);
+  app.use(pruneRequestBody);
 
   app.use('/', indexRouter);
   app.use('/auth', authRouter);
@@ -44,10 +45,10 @@ const configure = (app: express.Application): void => {
     (
       req: express.Request,
       res: express.Response,
-      next: express.NextFunction
+      next: express.NextFunction,
     ): void => {
       next(createError(404));
-    }
+    },
   );
 
   // error handler
@@ -55,7 +56,7 @@ const configure = (app: express.Application): void => {
     err: any,
     req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    next: express.NextFunction,
   ): void {
     // set locals, only providing error in development
     res.locals.message = err.message;

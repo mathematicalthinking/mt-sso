@@ -5,7 +5,12 @@ import * as Joi from '@hapi/joi';
 import User from '../models/User';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { VerifiedMtTokenPayload, UserDocument } from '../types';
+import {
+  VerifiedMtTokenPayload,
+  UserDocument,
+  EncSignUpRequest,
+  VmtSignUpRequest,
+} from '../types';
 
 import { verifyJWT, extractBearerToken } from '../utilities/jwt';
 
@@ -17,43 +22,41 @@ interface LoginResult {
 }
 
 export const getUserFromLogin = async (
-  username: unknown,
-  password: unknown
+  username: string,
+  password: string,
 ): Promise<LoginResult> => {
-  let usernameLower =
-    typeof username === 'string' ? username.toLowerCase() : '';
-
   let user: UserDocument | null = await User.findOne({
-    username: usernameLower,
+    username,
   }).lean();
 
-  let results: LoginResult = {
-    user,
-    errorMessage: null,
-  };
-
   if (user === null) {
-    results.errorMessage = 'Incorrect username';
-    return results;
+    return {
+      errorMessage: 'Incorrect username',
+      user: null,
+    };
   }
 
   let isPasswordValid: boolean = await bcrypt.compare(password, user.password);
-
   if (isPasswordValid) {
-    return results;
+    return {
+      user,
+      errorMessage: null,
+    };
   }
 
   // invalid password
 
-  results.errorMessage = 'Incorrect password';
-  return results;
+  return {
+    errorMessage: 'Incorrect password',
+    user: null,
+  };
 };
 
 export const generateToken = async (user: UserDocument): Promise<string> => {
   let { _id, encUserId, vmtUserId } = user;
 
   let payload = {
-    mtUserId: _id,
+    ssoId: _id,
     encUserId,
     vmtUserId,
   };
@@ -65,7 +68,7 @@ export const generateToken = async (user: UserDocument): Promise<string> => {
 };
 
 export const getMtUser = async (
-  req: express.Request
+  req: express.Request,
 ): Promise<VerifiedMtTokenPayload | null> => {
   try {
     let mtToken = extractBearerToken(req);
@@ -83,7 +86,7 @@ export const getMtUser = async (
 export const prepareMtUser = async (
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ): Promise<void> => {
   let verifiedPayload: VerifiedMtTokenPayload | null = await getMtUser(req);
 
@@ -91,9 +94,9 @@ export const prepareMtUser = async (
     return next();
   }
 
-  let { mtUserId } = verifiedPayload;
+  let { ssoId } = verifiedPayload;
 
-  let mtUser: UserDocument | null = await User.findById(mtUserId).lean();
+  let mtUser: UserDocument | null = await User.findById(ssoId).lean();
   if (mtUser !== null) {
     req.mt.auth.user = mtUser;
   }
@@ -105,7 +108,54 @@ export const getUser = (req: express.Request): UserDocument | undefined => {
 };
 
 export const getAuthRedirectURL = (
-  req: express.Request
+  req: express.Request,
 ): string | undefined => {
   return req.mt.auth.redirectURL;
+};
+
+export const verifySignupCredentialsAvailability = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let { username, email }: EncSignUpRequest | VmtSignUpRequest = req.body;
+
+    let filter: any = { username };
+
+    if (email !== undefined) {
+      filter = { $or: [{ username }, { email }] };
+    }
+
+    let existingUser: UserDocument | null = await User.findOne(filter).lean();
+
+    if (existingUser === null) {
+      // username and email are available
+      return next();
+    }
+    // username or email is taken
+    let isUsernameTaken = existingUser.username === username;
+    let noun = isUsernameTaken ? 'username' : 'email address';
+    let message = `There already exists a user with that ${noun}`;
+    res.json({ message, existingUser });
+    return;
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const hashSignupPassword = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let { password }: EncSignUpRequest | VmtSignUpRequest = req.body;
+
+    let hashedPass = await bcrypt.hash(password, 12);
+    req.body.password = hashedPass;
+    next();
+  } catch (err) {
+    next(err);
+  }
 };

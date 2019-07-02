@@ -1,8 +1,33 @@
-import * as express from 'express';
+import express from 'express';
 const router = express.Router();
 
-import localSignup from '../../controllers/localSignup';
+import {
+  createBaseUser,
+  encSignup,
+  vmtSignup,
+} from '../../controllers/localSignup';
+import { validateVmtSignup, validateEncSignup } from '../../validators/signup';
+import {
+  verifySignupCredentialsAvailability as verifyCredentials,
+  hashSignupPassword,
+} from '../../middleware/user-auth';
 
-router.post('/', localSignup);
+router.post(
+  '/enc',
+  validateEncSignup,
+  verifyCredentials,
+  hashSignupPassword,
+  createBaseUser,
+  encSignup,
+);
+
+router.post(
+  '/vmt',
+  validateVmtSignup,
+  verifyCredentials,
+  hashSignupPassword,
+  createBaseUser,
+  vmtSignup,
+);
 
 export default router;

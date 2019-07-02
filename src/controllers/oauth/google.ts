@@ -3,7 +3,7 @@ import User from '../../models/User';
 import { GoogleOauthProfileResponse, UserDocument } from '../../types';
 
 export const handleUserProfile = async (
-  userProfile: GoogleOauthProfileResponse
+  userProfile: GoogleOauthProfileResponse,
 ): Promise<UserDocument> => {
   let { sub, given_name, family_name, picture, email } = userProfile;
 
