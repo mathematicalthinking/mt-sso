@@ -5,13 +5,13 @@ import { MongooseOId, UserDocument, VerifiedMtTokenPayload } from '../types';
 
 const SSOSecret = process.env.MT_USER_JWT_SECRET;
 
-const SSO_TOKEN_EXPIRY = '1d';
+const SSO_TOKEN_EXPIRY = 86400000; // 1 day;
 const API_TOKEN_EXPIRY = 6000; // 30m
 
 export function signJWT(
   payload: string | object | Buffer,
   secret: jwt.Secret,
-  options?: jwt.SignOptions
+  options?: jwt.SignOptions,
 ): Promise<string> {
   return new Promise(
     (resolve, reject): void => {
@@ -25,9 +25,9 @@ export function signJWT(
           } else {
             resolve(encoded);
           }
-        }
+        },
       );
-    }
+    },
   );
 }
 
@@ -35,7 +35,7 @@ export function generateSSOToken(mtUser: UserDocument): Promise<string> {
   let { _id, encUserId, vmtUserId } = mtUser;
 
   let payload = {
-    mtUserId: _id,
+    ssoId: _id,
     encUserId,
     vmtUserId,
   };
@@ -47,10 +47,10 @@ export function generateSSOToken(mtUser: UserDocument): Promise<string> {
 }
 
 export async function generateAPIToken(
-  mtUserId: MongooseOId,
-  expiration: number = API_TOKEN_EXPIRY
+  ssoId: MongooseOId,
+  expiration: number = API_TOKEN_EXPIRY,
 ): Promise<string> {
-  let payload = { isValid: true, mtUserId };
+  let payload = { isValid: true, ssoId };
   let options: jwt.SignOptions = { expiresIn: expiration };
 
   return signJWT(payload, SSOSecret, options);
@@ -67,7 +67,7 @@ export function extractBearerToken(req: express.Request): string | undefined {
 export function verifyJWT(
   token: string,
   key: string | Buffer,
-  options?: jwt.VerifyOptions
+  options?: jwt.VerifyOptions,
 ): Promise<any> {
   return new Promise(
     (resolve, reject): void => {
@@ -81,14 +81,14 @@ export function verifyJWT(
           } else {
             resolve(decoded);
           }
-        }
+        },
       );
-    }
+    },
   );
 }
 
 export async function getVerifiedApiJWT(
-  req: express.Request
+  req: express.Request,
 ): Promise<any | null> {
   let authToken = extractBearerToken(req);
   if (authToken === undefined) {
@@ -103,7 +103,7 @@ export async function getVerifiedApiJWT(
 }
 
 export async function verifySSOToken(
-  token: string
+  token: string,
 ): Promise<VerifiedMtTokenPayload | null> {
   try {
     return verifyJWT(token, SSOSecret);
@@ -112,3 +112,7 @@ export async function verifySSOToken(
     return null;
   }
 }
+
+export const setSsoCookie = (res: express.Response, token: string): void => {
+  res.cookie('mtToken', token, { httpOnly: true, maxAge: SSO_TOKEN_EXPIRY });
+};
