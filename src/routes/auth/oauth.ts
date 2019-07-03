@@ -33,7 +33,7 @@ router.get(
 
       res.cookie('redirectURL', getAuthRedirectURL(req), {
         httpOnly: true,
-        maxAge: 3600,
+        maxAge: 60000, // 1min,
       });
 
       res.redirect(url);
@@ -84,8 +84,26 @@ router.get(
 
         let profile: GoogleOauthProfileResponse = profileResults.data;
 
-        let mtUser = await handleUserProfile(profile);
+        let { mtUser } = await handleUserProfile(profile);
 
+        if (mtUser === null) {
+          let redirectURL =
+            req.cookies.redirectURL || process.env.DEFAULT_REDIRECT_URL;
+          console.log('oauth error redirect url: ', redirectURL);
+          let loginRoutePath: string;
+
+          if (redirectURL === process.env.ENC_URL) {
+            loginRoutePath = '/#/auth/login';
+          } else {
+            loginRoutePath = '/login';
+          }
+
+          res.redirect(
+            `${redirectURL}${loginRoutePath}?oauthError=emailUnavailable`,
+          );
+
+          return;
+        }
         // What is best way to know if user is signing in with google for the first time?
         // Should never have only one of encUserId / vmtUserId ... but what if one failed for some reason?
 

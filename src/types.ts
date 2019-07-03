@@ -203,3 +203,8 @@ export interface VmtSignUpRequest {
   email: string;
   accountType: string;
 }
+
+export interface GoogleSignupResponse {
+  mtUser: UserDocument | null;
+  message: string | null;
+}

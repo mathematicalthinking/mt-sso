@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import User from '../../models/User';
-import { GoogleOauthProfileResponse, UserDocument } from '../../types';
+import { GoogleOauthProfileResponse, GoogleSignupResponse } from '../../types';
 
 export const handleUserProfile = async (
   userProfile: GoogleOauthProfileResponse,
-): Promise<UserDocument> => {
+): Promise<GoogleSignupResponse> => {
   let { sub, given_name, family_name, picture, email } = userProfile;
 
   // check if user exists already with username = to email
@@ -15,7 +15,7 @@ export const handleUserProfile = async (
   });
 
   if (existingUser === null) {
-    return User.create({
+    let mtUser = await User.create({
       username: email,
       email,
       googleId: sub,
@@ -24,28 +24,17 @@ export const handleUserProfile = async (
       googleProfilePic: picture,
       isEmailConfirmed: true,
     });
+
+    return {
+      mtUser,
+      message: null,
+    };
   }
 
-  if (typeof existingUser.googleId !== 'string') {
-    // add google profile info to existing user
-    existingUser.googleId = sub;
+  // email already associated with an account
 
-    // convenient naming for looping
-    let googleProfilePic = picture;
-    let firstName = given_name;
-    let lastName = family_name;
-
-    for (let detail of [firstName, lastName, googleProfilePic, email]) {
-      // set google profile detail if not already set on existing user
-      if (
-        typeof detail === 'string' &&
-        typeof existingUser[detail] !== 'string'
-      ) {
-        existingUser[detail] = detail;
-      }
-    }
-
-    await existingUser.save();
-  }
-  return existingUser;
+  return {
+    mtUser: null,
+    message: 'There is already an account associated with that email',
+  };
 };
