@@ -14,6 +14,7 @@ require('dotenv').config({ path: pathToEnvFile });
 import { prepareRedirectURL, prep, pruneRequestBody } from './middleware/prep';
 import { prepareMtUser } from './middleware/user-auth';
 import configureCors from './middleware/cors';
+import { verifyBearerToken, verifyRequestOrigin } from './middleware/auth';
 
 // import initializeDb from './dbs/mt';
 
@@ -33,6 +34,8 @@ const configure = (app: express.Application): void => {
   // middleware
   app.use(configureCors);
   app.use(prep);
+  app.use(verifyBearerToken);
+  app.use(verifyRequestOrigin);
   app.use(prepareMtUser);
   app.use(prepareRedirectURL);
   app.use(pruneRequestBody);

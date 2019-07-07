@@ -2,6 +2,20 @@ import { Request, Response, NextFunction } from 'express';
 
 import allowedDomains from '../constants/allowed_domains';
 
+export const prep = (req: Request, res: Response, next: NextFunction): void => {
+  let mtAuth = {
+    mt: {
+      auth: {
+        signup: {},
+      },
+    },
+  };
+
+  Object.assign(req, mtAuth);
+
+  next();
+};
+
 export const prepareRedirectURL = (
   req: Request,
   res: Response,
@@ -15,20 +29,6 @@ export const prepareRedirectURL = (
   // set redirectURL on req
 
   req.mt.auth.redirectURL = authRedirectURL;
-  next();
-};
-
-export const prep = (req: Request, res: Response, next: NextFunction): void => {
-  let mtAuth = {
-    mt: {
-      auth: {
-        signup: {},
-      },
-    },
-  };
-
-  Object.assign(req, mtAuth);
-
   next();
 };
 
@@ -58,6 +58,29 @@ export const pruneRequestBody = (
     if (isEmpty === true) {
       delete req.body[key];
     }
+  }
+  next();
+};
+
+export const prepareAllowedIssuers = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  // currently all routes except signup/enc and signup/vmt
+  // accept requests from both vmt and enc
+  let path = req.path;
+  let segments = path.split('/');
+
+  if (segments.includes('enc')) {
+    req.mt.auth.allowedIssuers = [process.env.ENC_JWT_ISSUER_ID];
+  } else if (segments.includes('vmt')) {
+    req.mt.auth.allowedIssuers = [process.env.VMT_JWT_ISSUER_ID];
+  } else {
+    req.mt.auth.allowedIssuers = [
+      process.env.ENC_JWT_ISSUER_ID,
+      process.env.VMT_JWT_ISSUER_ID,
+    ];
   }
   next();
 };
