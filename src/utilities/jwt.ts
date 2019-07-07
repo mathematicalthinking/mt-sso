@@ -5,8 +5,13 @@ import { MongooseOId, UserDocument, VerifiedMtTokenPayload } from '../types';
 
 const SSOSecret = process.env.MT_USER_JWT_SECRET;
 
-const SSO_TOKEN_EXPIRY = 86400000; // 1 day;
-const API_TOKEN_EXPIRY = 6000; // 30m
+import {
+  accessCookie,
+  refreshCookie,
+  accessToken,
+  refreshToken,
+  apiToken,
+} from '../constants/auth';
 
 export function signJWT(
   payload: string | object | Buffer,
@@ -31,7 +36,7 @@ export function signJWT(
   );
 }
 
-export function generateSSOToken(mtUser: UserDocument): Promise<string> {
+export function generateAccessToken(mtUser: UserDocument): Promise<string> {
   let { _id, encUserId, vmtUserId } = mtUser;
 
   let payload = {
@@ -40,7 +45,10 @@ export function generateSSOToken(mtUser: UserDocument): Promise<string> {
     vmtUserId,
   };
   let options = {
-    expiresIn: SSO_TOKEN_EXPIRY,
+    expiresIn: accessToken.expiresIn,
+    issuer: process.env.JWT_ISSUER_ID,
+    subject: 'access',
+    audience: [process.env.ENC_JWT_ISSUER_ID, process.env.VMT_JWT_ISSUER_ID],
   };
 
   return signJWT(payload, SSOSecret, options);
@@ -48,10 +56,13 @@ export function generateSSOToken(mtUser: UserDocument): Promise<string> {
 
 export async function generateAPIToken(
   ssoId: MongooseOId,
-  expiration: number = API_TOKEN_EXPIRY,
+  expiration: string = apiToken.expiresIn,
 ): Promise<string> {
   let payload = { isValid: true, ssoId };
-  let options: jwt.SignOptions = { expiresIn: expiration };
+  let options: jwt.SignOptions = {
+    expiresIn: expiration,
+    issuer: process.env.JWT_ISSUER_ID,
+  };
 
   return signJWT(payload, SSOSecret, options);
 }
@@ -75,7 +86,7 @@ export function verifyJWT(
         token,
         key,
         options || {},
-        (err: Error, decoded: string | object): void => {
+        (err: jwt.JsonWebTokenError, decoded: string | object): void => {
           if (err) {
             reject(err);
           } else {
@@ -114,5 +125,42 @@ export async function verifySSOToken(
 }
 
 export const setSsoCookie = (res: express.Response, token: string): void => {
-  res.cookie('mtToken', token, { httpOnly: true, maxAge: SSO_TOKEN_EXPIRY });
+  let doSetSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  res.cookie(accessCookie.name, token, {
+    httpOnly: true,
+    maxAge: accessCookie.maxAge,
+    secure: doSetSecure,
+  });
+};
+
+export const generateRefreshToken = (mtUser: UserDocument): Promise<string> => {
+  let { _id, encUserId, vmtUserId } = mtUser;
+
+  let payload = {
+    ssoId: _id,
+    encUserId,
+    vmtUserId,
+  };
+  let options = {
+    issuer: process.env.JWT_ISSUER_ID,
+    subject: 'refresh',
+    audience: [process.env.ENC_JWT_ISSUER_ID, process.env.VMT_JWT_ISSUER_ID],
+    expiresIn: refreshToken.expiresIn,
+  };
+
+  return signJWT(payload, SSOSecret, options);
+};
+
+export const setSsoRefreshCookie = (
+  res: express.Response,
+  token: string,
+): void => {
+  let doSetSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  res.cookie(refreshCookie.name, token, {
+    httpOnly: true,
+    maxAge: refreshCookie.maxAge,
+    secure: doSetSecure,
+  });
 };

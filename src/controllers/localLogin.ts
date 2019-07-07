@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { getUserFromLogin, generateToken } from '../middleware/user-auth';
+import { getUserFromLogin } from '../middleware/user-auth';
 import { LoginRequest } from '../types';
+import { generateRefreshToken, generateAccessToken } from '../utilities/jwt';
 
 export const jwtLogin = async (
   req: Request,
@@ -20,10 +21,14 @@ export const jwtLogin = async (
       return;
     }
 
-    let token = await generateToken(user);
+    let [accessToken, refreshToken] = await Promise.all([
+      generateAccessToken(user),
+      generateRefreshToken(user),
+    ]);
     res.json({
       user,
-      mtToken: token,
+      accessToken,
+      refreshToken,
     });
     return;
   } catch (err) {

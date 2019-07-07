@@ -1,17 +1,16 @@
-import * as express from 'express';
-
-import * as Joi from '@hapi/joi';
+import express from 'express';
+import bcrypt from 'bcrypt';
+import createError from 'http-errors';
 
 import User from '../models/User';
-import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
+import RevokedToken from '../models/RevokedToken';
 import {
   VerifiedMtTokenPayload,
   UserDocument,
   EncSignUpRequest,
   VmtSignUpRequest,
+  RevokedTokenDocument,
 } from '../types';
-
 import { verifyJWT, extractBearerToken } from '../utilities/jwt';
 
 const secret = process.env.MT_USER_JWT_SECRET;
@@ -27,7 +26,7 @@ export const getUserFromLogin = async (
 ): Promise<LoginResult> => {
   let user: UserDocument | null = await User.findOne({
     username,
-  }).lean();
+  });
 
   if (user === null) {
     return {
@@ -52,32 +51,18 @@ export const getUserFromLogin = async (
   };
 };
 
-export const generateToken = async (user: UserDocument): Promise<string> => {
-  let { _id, encUserId, vmtUserId } = user;
-
-  let payload = {
-    ssoId: _id,
-    encUserId,
-    vmtUserId,
-  };
-  let options = {
-    expiresIn: '1d',
-  };
-
-  return jwt.sign(payload, secret, options);
-};
-
 export const getMtUser = async (
   req: express.Request,
 ): Promise<VerifiedMtTokenPayload | null> => {
   try {
-    let mtToken = extractBearerToken(req);
-    if (!mtToken) {
+    let accessToken = extractBearerToken(req);
+
+    if (accessToken === undefined) {
       return null;
     }
 
     // if token is not verified, error will be thrown
-    return verifyJWT(mtToken, secret);
+    return verifyJWT(accessToken, secret);
   } catch (err) {
     return null;
   }
@@ -156,6 +141,44 @@ export const hashSignupPassword = async (
     req.body.password = hashedPass;
     next();
   } catch (err) {
+    next(err);
+  }
+};
+
+export const isTokenNonRevoked = async (token: string): Promise<boolean> => {
+  let revokedToken: RevokedTokenDocument | null = await RevokedToken.findOne({
+    encodedToken: token,
+  }).lean();
+  return revokedToken === null;
+};
+
+export const validateRefreshToken = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let encodedToken = req.body.refreshToken;
+
+    if (encodedToken === undefined) {
+      return next(new createError[401]());
+    }
+
+    let [isTokenValid, verifiedToken] = await Promise.all([
+      isTokenNonRevoked(encodedToken),
+      verifyJWT(encodedToken, secret),
+    ]);
+
+    if (isTokenValid && verifiedToken) {
+      // get sso user from db and put on req for controller
+      let user = await User.findById(verifiedToken.ssoId).lean();
+      if (user !== null) {
+        req.mt.auth.user = user;
+        return next();
+      }
+    }
+  } catch (err) {
+    console.log('validate refresh token err: ', err);
     next(err);
   }
 };

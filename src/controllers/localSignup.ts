@@ -2,8 +2,14 @@ import * as express from 'express';
 import axios, { AxiosResponse } from 'axios';
 import User from '../models/User';
 
-import { generateToken, getUser } from '../middleware/user-auth';
-import { generateAPIToken, setSsoCookie } from '../utilities/jwt';
+import { getUser } from '../middleware/user-auth';
+import {
+  generateAPIToken,
+  setSsoCookie,
+  setSsoRefreshCookie,
+  generateAccessToken,
+  generateRefreshToken,
+} from '../utilities/jwt';
 import {
   EncUserDocument,
   VmtUserDocument,
@@ -172,18 +178,23 @@ export const encSignup = async (
 
   await mtUser.save();
 
-  let mtToken;
+  let accessToken;
+  let refreshToken;
 
   if (doLoginNewUser) {
-    mtToken = await generateToken(mtUser);
-    // res.cookie('mtToken', mtToken, { httpOnly: true });
-    setSsoCookie(res, mtToken);
+    [accessToken, refreshToken] = await Promise.all([
+      generateAccessToken(mtUser),
+      generateRefreshToken(mtUser),
+    ]);
+
+    setSsoCookie(res, accessToken);
+    setSsoRefreshCookie(res, refreshToken);
   }
 
   let results = {
-    mtToken,
+    accessToken,
+    refreshToken,
     encUser,
-    vmtUser,
   };
   res.json(results);
 };
@@ -218,17 +229,24 @@ export const vmtSignup = async (
 
   await mtUser.save();
 
-  let mtToken;
+  let accessToken;
+  let refreshToken;
 
   if (doLoginNewUser) {
-    mtToken = await generateToken(mtUser);
-    setSsoCookie(res, mtToken);
+    [accessToken, refreshToken] = await Promise.all([
+      generateAccessToken(mtUser),
+      generateRefreshToken(mtUser),
+    ]);
+
+    setSsoCookie(res, accessToken);
+    setSsoRefreshCookie(res, refreshToken);
   }
 
   let results = {
-    mtToken,
-    encUser,
+    accessToken,
+    refreshToken,
     vmtUser,
   };
+
   res.json(results);
 };

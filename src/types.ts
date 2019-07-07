@@ -7,10 +7,15 @@ declare global {
       mt: {
         auth: {
           redirectURL?: string;
+          successRedirectUrl?: string;
+          failureRedirectUrl?: string;
+          bearerToken: string;
           user?: UserDocument;
+          allowedIssuers?: string[];
           signup: {
             user?: UserDocument;
           };
+          issuer: string;
         };
       };
     }
@@ -40,7 +45,7 @@ declare global {
   }
 }
 
-export type MongooseOId = mongoose.Types.ObjectId;
+export type MongooseOId = mongoose.Schema.Types.ObjectId;
 export interface VerifiedMtTokenPayload {
   ssoId: MongooseOId;
   encUserId: MongooseOId;
@@ -159,7 +164,8 @@ export interface LocalSignupRequest {
 export interface LoginResponse {
   user: UserDocument | null;
   message: string | null;
-  mtToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface LoginRequest {
@@ -172,7 +178,8 @@ export interface SignupResponse {
   existingUser?: UserDocument;
   encUser?: EncUserDocument;
   vmtUser?: VmtUserDocument;
-  mtToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
 }
 
 export interface ValidationErrorResponse {
@@ -208,3 +215,7 @@ export interface GoogleSignupResponse {
   mtUser: UserDocument | null;
   message: string | null;
 }
+
+export type RevokedTokenDocument = mongoose.Document & {
+  encodedToken: string;
+};

@@ -5,13 +5,13 @@ import User from '../models/User';
 
 import { sendError } from '../utilities/errors';
 import { getUser } from '../middleware/user-auth';
-import { generateSSOToken } from '../utilities/jwt';
+import { generateAccessToken, generateRefreshToken } from '../utilities/jwt';
 import { getVerifiedApiJWT } from '../utilities/jwt';
 
 export async function validateResetToken(
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ): Promise<void> {
   try {
     let verifiedJWTPayload = await getVerifiedApiJWT(req);
@@ -40,7 +40,7 @@ export async function validateResetToken(
 export async function resetPassword(
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ): Promise<void> {
   try {
     let verifiedJWTPayload = await getVerifiedApiJWT(req);
@@ -67,11 +67,14 @@ export async function resetPassword(
 
     await user.save();
 
-    let mtToken = await generateSSOToken(user);
-
+    let [accessToken, refreshToken] = await Promise.all([
+      generateAccessToken(user),
+      generateRefreshToken(user),
+    ]);
     res.json({
       user,
-      mtToken,
+      accessToken,
+      refreshToken,
     });
   } catch (err) {
     console.error(`Error resetPassword: ${err}`);
@@ -82,7 +85,7 @@ export async function resetPassword(
 export async function resetPasswordById(
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ): Promise<void> {
   try {
     let verifiedJWTPayload = await getVerifiedApiJWT(req);
