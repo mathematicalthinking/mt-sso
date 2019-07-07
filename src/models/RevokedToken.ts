@@ -7,7 +7,7 @@ const RevokedTokenSchema = new Schema(
     encodedToken: { type: String },
   },
 
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model('RevokedToken', RevokedTokenSchema);
