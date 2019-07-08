@@ -98,21 +98,6 @@ export function verifyJWT(
   );
 }
 
-export async function getVerifiedApiJWT(
-  req: express.Request,
-): Promise<any | null> {
-  let authToken = extractBearerToken(req);
-  if (authToken === undefined) {
-    return null;
-  }
-  try {
-    return verifyJWT(authToken, SSOSecret);
-  } catch (err) {
-    // invalid token
-    return null;
-  }
-}
-
 export async function verifySSOToken(
   token: string,
 ): Promise<VerifiedMtTokenPayload | null> {

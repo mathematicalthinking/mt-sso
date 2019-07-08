@@ -3,18 +3,12 @@ import * as express from 'express';
 import { getResetToken } from '../utilities/tokens';
 import User from '../models/User';
 import { sendEmailSMTP } from '../utilities/emails';
-import { getVerifiedApiJWT } from '../utilities/jwt';
 
 import { sendError } from '../utilities/errors';
 
 import { getIssuerName } from '../config/jwt_issuers';
 import { getAppHost } from '../config/app_urls';
 import createError from 'http-errors';
-
-interface ForgotPasswordRequest {
-  username?: unknown;
-  email: unknown;
-}
 
 export const forgotPassword = async function(
   req: express.Request,
@@ -25,11 +19,6 @@ export const forgotPassword = async function(
   let user;
 
   try {
-    let verifiedJWTPayload = await getVerifiedApiJWT(req);
-
-    if (verifiedJWTPayload === null) {
-      return sendError.NotAuthorizedError(null, res);
-    }
     let issuerId = req.mt.auth.issuer;
     let appName = getIssuerName(issuerId);
 
