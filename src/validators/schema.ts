@@ -107,3 +107,16 @@ export const forgotPasswordRequest = Joi.object()
     email,
   })
   .xor('username', 'email');
+
+export const basicTokenRequest = Joi.object().keys({
+  token: trimmed.required(),
+});
+
+export const resetPasswordByTokenRequest = Joi.object().keys({
+  password: signupPassword,
+});
+
+export const resetPasswordByIdRequest = Joi.object().keys({
+  id: ObjectIdHexString.required(),
+  password: signupPassword,
+});

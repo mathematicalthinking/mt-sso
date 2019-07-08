@@ -6,7 +6,6 @@ import User from '../models/User';
 import { sendError } from '../utilities/errors';
 import { getUser } from '../middleware/user-auth';
 import { generateAccessToken, generateRefreshToken } from '../utilities/jwt';
-import { getVerifiedApiJWT } from '../utilities/jwt';
 
 export async function validateResetToken(
   req: express.Request,
@@ -14,18 +13,12 @@ export async function validateResetToken(
   next: express.NextFunction,
 ): Promise<void> {
   try {
-    let verifiedJWTPayload = await getVerifiedApiJWT(req);
-
-    if (verifiedJWTPayload === null) {
-      return sendError.NotAuthorizedError(null, res);
-    }
-
     const user = await User.findOne({
       resetPasswordToken: req.params.token,
       resetPasswordExpires: { $gt: Date.now() },
-    });
+    }).lean();
 
-    if (!user) {
+    if (user === null) {
       res.json({
         info: 'Password reset token is invalid or has expired',
         isValid: false,
@@ -34,7 +27,7 @@ export async function validateResetToken(
     }
     res.json({ info: 'valid token', isValid: true });
   } catch (err) {
-    return sendError.InternalError(err, res);
+    next(err);
   }
 }
 export async function resetPassword(
@@ -43,17 +36,11 @@ export async function resetPassword(
   next: express.NextFunction,
 ): Promise<void> {
   try {
-    let verifiedJWTPayload = await getVerifiedApiJWT(req);
-
-    if (verifiedJWTPayload === null) {
-      return sendError.NotAuthorizedError(null, res);
-    }
-
     const user = await User.findOne({
       resetPasswordToken: req.params.token,
       resetPasswordExpires: { $gt: Date.now() },
     });
-    if (!user) {
+    if (user === null) {
       res.json({
         info: 'Password reset token is invalid or has expired.',
       });
@@ -71,6 +58,7 @@ export async function resetPassword(
       generateAccessToken(user),
       generateRefreshToken(user),
     ]);
+
     res.json({
       user,
       accessToken,
@@ -79,7 +67,7 @@ export async function resetPassword(
   } catch (err) {
     console.error(`Error resetPassword: ${err}`);
     console.trace();
-    return sendError.InternalError(err, res);
+    next(err);
   }
 }
 export async function resetPasswordById(
@@ -88,12 +76,6 @@ export async function resetPasswordById(
   next: express.NextFunction,
 ): Promise<void> {
   try {
-    let verifiedJWTPayload = await getVerifiedApiJWT(req);
-
-    if (verifiedJWTPayload === null) {
-      return sendError.NotAuthorizedError(null, res);
-    }
-
     const reqUser = getUser(req);
 
     if (reqUser === undefined) {
@@ -102,16 +84,8 @@ export async function resetPasswordById(
 
     const { id, password } = req.body;
 
-    if (!id || !password) {
-      const msg = {
-        info: 'Invalid user id or password',
-      };
-      res.json(msg);
-      return;
-    }
-
     const user = await User.findById(id);
-    if (!user) {
+    if (user === null) {
       res.json({
         info: 'Cannot find user',
       });
@@ -129,6 +103,6 @@ export async function resetPasswordById(
 
     res.json(user);
   } catch (err) {
-    return sendError.InternalError(err, res);
+    next(err);
   }
 }
