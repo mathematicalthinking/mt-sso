@@ -16,13 +16,6 @@ const UserSchema = new Schema(
     vmtUserId: { type: ObjectId },
     email: {
       type: String,
-      validate: {
-        validator: (email: string): boolean => {
-          let emailRegex = /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/;
-          return emailRegex.test(email);
-        },
-        // message: '{VALUE} is not a valid email address',
-      },
     },
     firstName: { type: String },
     lastName: { type: String },
