@@ -16,6 +16,7 @@ export const validatePostRequest = async (
     );
 
     if (validationError === null) {
+      // validatedBody will have the appropriate string fields trimmed and in correct case
       req.body = validatedBody;
       return next();
     }

@@ -9,6 +9,7 @@ import { sendError } from '../utilities/errors';
 
 import { getIssuerName } from '../config/jwt_issuers';
 import { getAppHost } from '../config/app_urls';
+import createError from 'http-errors';
 
 interface ForgotPasswordRequest {
   username?: unknown;
@@ -18,7 +19,7 @@ interface ForgotPasswordRequest {
 export const forgotPassword = async function(
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ): Promise<void | express.Response> {
   let token;
   let user;
@@ -29,18 +30,18 @@ export const forgotPassword = async function(
     if (verifiedJWTPayload === null) {
       return sendError.NotAuthorizedError(null, res);
     }
-
-    let appName = getIssuerName(verifiedJWTPayload.iss);
+    let issuerId = req.mt.auth.issuer;
+    let appName = getIssuerName(issuerId);
 
     if (appName === null) {
-      return sendError.NotAuthorizedError(null, res);
+      return next(new createError[403]());
     }
 
     let host = getAppHost(appName);
 
     if (host === undefined) {
       // should never happen
-      return sendError.InternalError(null, res);
+      return next(new createError[500]());
     }
 
     token = await getResetToken(20);
@@ -69,7 +70,7 @@ export const forgotPassword = async function(
       // invalid request
       return sendError.InvalidContentError(
         'You must provide a valid username or email',
-        res
+        res,
       );
     }
 
@@ -99,6 +100,6 @@ export const forgotPassword = async function(
   } catch (err) {
     console.error(`Error auth/forgot: ${err}`);
     console.trace();
-    return res.status(500).json({ message: err.message });
+    next(new createError[500]());
   }
 };

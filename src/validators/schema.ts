@@ -100,3 +100,10 @@ export const loginRequest = Joi.object().keys({
     .max(256),
   password: trimmed.required().max(256),
 });
+
+export const forgotPasswordRequest = Joi.object()
+  .keys({
+    username: trimmed.lowercase().max(256),
+    email,
+  })
+  .xor('username', 'email');
