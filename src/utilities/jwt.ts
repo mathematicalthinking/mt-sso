@@ -9,7 +9,6 @@ import {
   accessCookie,
   refreshCookie,
   accessToken,
-  refreshToken,
   apiToken,
 } from '../constants/auth';
 
@@ -131,7 +130,7 @@ export const generateRefreshToken = (mtUser: UserDocument): Promise<string> => {
     issuer: process.env.JWT_ISSUER_ID,
     subject: 'refresh',
     audience: [process.env.ENC_JWT_ISSUER_ID, process.env.VMT_JWT_ISSUER_ID],
-    expiresIn: refreshToken.expiresIn,
+    // expiresIn: refreshToken.expiresIn,
   };
 
   return signJWT(payload, SSOSecret, options);
@@ -145,7 +144,14 @@ export const setSsoRefreshCookie = (
     process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
   res.cookie(refreshCookie.name, token, {
     httpOnly: true,
-    maxAge: refreshCookie.maxAge,
     secure: doSetSecure,
   });
+};
+
+export const clearAccessCookie = (res: express.Response): void => {
+  res.cookie(accessCookie.name, '', { httpOnly: true, maxAge: 0 });
+};
+
+export const clearRefreshCookie = (res: express.Response): void => {
+  res.cookie(refreshCookie.name, '', { httpOnly: true, maxAge: 0 });
 };

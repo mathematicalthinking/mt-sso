@@ -1,7 +1,8 @@
 import express from 'express';
+import createError from 'http-errors';
+
 import { generateAccessToken } from '../utilities/jwt';
 import { getUser } from '../middleware/user-auth';
-import createError from 'http-errors';
 
 export const createNewAccessToken = async (
   req: express.Request,
@@ -15,6 +16,5 @@ export const createNewAccessToken = async (
   let accessToken = await generateAccessToken(user);
   res.json({
     accessToken,
-    refreshToken: req.body.refreshToken,
   });
 };

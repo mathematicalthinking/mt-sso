@@ -159,7 +159,6 @@ export const validateRefreshToken = async (
 ): Promise<void> => {
   try {
     let encodedToken = req.body.refreshToken;
-
     if (encodedToken === undefined) {
       return next(new createError[401]());
     }
@@ -168,15 +167,17 @@ export const validateRefreshToken = async (
       isTokenNonRevoked(encodedToken),
       verifyJWT(encodedToken, secret),
     ]);
-
     if (isTokenValid && verifiedToken) {
       // get sso user from db and put on req for controller
       let user = await User.findById(verifiedToken.ssoId).lean();
-      if (user !== null) {
-        req.mt.auth.user = user;
-        return next();
+      if (user === null) {
+        return next(new createError[401]());
       }
+      req.mt.auth.user = user;
+      return next();
     }
+    // refresh token has been revoked or is invalid
+    return next(new createError[401]());
   } catch (err) {
     console.log('validate refresh token err: ', err);
     next(err);
