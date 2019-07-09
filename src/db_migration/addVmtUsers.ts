@@ -22,11 +22,7 @@ export const addVmtUsers = async function(): Promise<void> {
     let vmtUsers = await find(vmtDb, 'users');
 
     let addedUsers = vmtUsers.map(
-      async (
-        vmtUser,
-      ): Promise<
-        FindAndModifyWriteOpResultObject | boolean | InsertOneWriteOpResult
-      > => {
+      async (vmtUser): Promise<FindAndModifyWriteOpResultObject | boolean> => {
         let existingUser = await findOne(ssoDb, 'users', {
           vmtUserId: vmtUser._id,
         });
@@ -47,7 +43,12 @@ export const addVmtUsers = async function(): Promise<void> {
           // so just update the vmtUserId
           addedEncUsers++;
           encAlias.vmtUserId = vmtUser._id;
-          return ssoDb.collection('users').insertOne(encAlias);
+          return ssoDb
+            .collection('users')
+            .findOneAndUpdate(
+              { _id: encAlias._id },
+              { $set: { vmtUserId: vmtUser._id } },
+            );
           // return encAlias.save();
         }
         newlyAdded++;
