@@ -164,10 +164,12 @@ export const googleOauth = async (
 
     let url = `${googleEndpoint}?client_id=${clientId}&response_type=${responseType}&scope=${scope}&redirect_uri=${redirectURI}&include_granted_scopes=${includeScopes}`;
 
-    res.cookie('redirectURL', getAuthRedirectURL(req), {
+    let options: express.CookieOptions = {
       httpOnly: true,
-      maxAge: 60000, // 1min,
-    });
+      maxAge: 300000, // 5min,
+    };
+
+    res.cookie('redirectURL', getAuthRedirectURL(req), options);
 
     res.redirect(url);
   } catch (err) {

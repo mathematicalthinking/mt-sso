@@ -116,10 +116,9 @@ export const setSsoCookie = (res: express.Response, token: string): void => {
     httpOnly: true,
     maxAge: accessCookie.maxAge,
     secure: doSetSecure,
+    domain: process.env.SSO_COOKIE_DOMAIN,
   };
-  if (doSetSecure) {
-    options.domain = process.env.SSO_COOKIE_DOMAIN;
-  }
+
   res.cookie(accessCookie.name, token, options);
 };
 
@@ -147,21 +146,32 @@ export const setSsoRefreshCookie = (
 ): void => {
   let doSetSecure =
     process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+
   let options: express.CookieOptions = {
     httpOnly: true,
     maxAge: refreshCookie.maxAge,
     secure: doSetSecure,
+    domain: process.env.SSO_COOKIE_DOMAIN,
   };
-  if (doSetSecure) {
-    options.domain = process.env.SSO_COOKIE_DOMAIN;
-  }
+
   res.cookie(refreshCookie.name, token, options);
 };
 
 export const clearAccessCookie = (res: express.Response): void => {
-  res.cookie(accessCookie.name, '', { httpOnly: true, maxAge: 0 });
+  let isSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  let domain = process.env.SSO_COOKIE_DOMAIN;
+
+  let options = { domain, httpOnly: true, secure: isSecure };
+
+  res.clearCookie(accessCookie.name, options);
 };
 
 export const clearRefreshCookie = (res: express.Response): void => {
-  res.cookie(refreshCookie.name, '', { httpOnly: true, maxAge: 0 });
+  let isSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  let domain = process.env.SSO_COOKIE_DOMAIN;
+
+  let options = { domain, httpOnly: true, secure: isSecure };
+  res.clearCookie(refreshCookie.name, options);
 };
