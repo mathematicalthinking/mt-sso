@@ -111,11 +111,16 @@ export async function verifySSOToken(
 export const setSsoCookie = (res: express.Response, token: string): void => {
   let doSetSecure =
     process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
-  res.cookie(accessCookie.name, token, {
+
+  let options: express.CookieOptions = {
     httpOnly: true,
     maxAge: accessCookie.maxAge,
     secure: doSetSecure,
-  });
+  };
+  if (doSetSecure) {
+    options.domain = process.env.SSO_COOKIE_DOMAIN;
+  }
+  res.cookie(accessCookie.name, token, options);
 };
 
 export const generateRefreshToken = (mtUser: UserDocument): Promise<string> => {
@@ -142,10 +147,15 @@ export const setSsoRefreshCookie = (
 ): void => {
   let doSetSecure =
     process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
-  res.cookie(refreshCookie.name, token, {
+  let options: express.CookieOptions = {
     httpOnly: true,
+    maxAge: refreshCookie.maxAge,
     secure: doSetSecure,
-  });
+  };
+  if (doSetSecure) {
+    options.domain = process.env.SSO_COOKIE_DOMAIN;
+  }
+  res.cookie(refreshCookie.name, token, options);
 };
 
 export const clearAccessCookie = (res: express.Response): void => {

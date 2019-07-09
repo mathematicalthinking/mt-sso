@@ -41,6 +41,7 @@ declare global {
       VMT_GMAIL_USERNAME: string;
       VMT_GMAIL_PASSWORD: string;
       VMT_JWT_ISSUER_ID: string;
+      SSO_COOKIE_DOMAIN: string;
     }
   }
 }
