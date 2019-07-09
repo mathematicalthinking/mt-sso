@@ -20,4 +20,4 @@ async function initialMigration(): Promise<void> {
   }
 }
 
-// initialMigration();
+initialMigration();

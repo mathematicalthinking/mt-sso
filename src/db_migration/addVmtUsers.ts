@@ -1,11 +1,14 @@
 import { connect, find, findOne } from './utils';
 import { UserDocument } from '../types';
-import { FindAndModifyWriteOpResultObject } from 'mongodb';
+import {
+  FindAndModifyWriteOpResultObject,
+  InsertOneWriteOpResult,
+} from 'mongodb';
 import { isNonEmptyString } from '../utilities/objects';
 
-const encDbUri = 'mongodb://localhost:27017/encompass_seed';
-const vmtDbUri = 'mongodb://localhost:27017/vmt-test';
-const ssoDbUri = 'mongodb://localhost:27017/mtlogin_test';
+const encDbUri = 'mongodb://localhost:27017/encompass_stage';
+const vmtDbUri = 'mongodb://localhost:27017/vmt_staging';
+const ssoDbUri = 'mongodb://localhost:27017/mtlogin_stage';
 
 export const addVmtUsers = async function(): Promise<void> {
   let alreadyAddedUsers = 0;
@@ -19,7 +22,11 @@ export const addVmtUsers = async function(): Promise<void> {
     let vmtUsers = await find(vmtDb, 'users');
 
     let addedUsers = vmtUsers.map(
-      async (vmtUser): Promise<FindAndModifyWriteOpResultObject | boolean> => {
+      async (
+        vmtUser,
+      ): Promise<
+        FindAndModifyWriteOpResultObject | boolean | InsertOneWriteOpResult
+      > => {
         let existingUser = await findOne(ssoDb, 'users', {
           vmtUserId: vmtUser._id,
         });
@@ -40,13 +47,14 @@ export const addVmtUsers = async function(): Promise<void> {
           // so just update the vmtUserId
           addedEncUsers++;
           encAlias.vmtUserId = vmtUser._id;
-          return encAlias.save();
+          return ssoDb.collection('users').insertOne(encAlias);
+          // return encAlias.save();
         }
         newlyAdded++;
 
         let hasEmail = isNonEmptyString(vmtUser.email, true);
 
-        let hasPassword = isNonEmptyString(vmtUser.password, true);
+        // let hasPassword = isNonEmptyString(vmtUser.password, true);
 
         let firstName = isNonEmptyString(vmtUser.firstName, true)
           ? vmtUser.firstName

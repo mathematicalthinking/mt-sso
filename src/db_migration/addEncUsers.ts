@@ -2,12 +2,15 @@ import { isNull, intersection } from 'lodash';
 
 import { connect, find } from './utils';
 import { UserDocument } from '../types';
-import { FindAndModifyWriteOpResultObject } from 'mongodb';
+import {
+  FindAndModifyWriteOpResultObject,
+  InsertOneWriteOpResult,
+} from 'mongodb';
 import { isNonEmptyString } from '../utilities/objects';
 
-const encDbUri = 'mongodb://localhost:27017/encompass_seed';
-const vmtDbUri = 'mongodb://localhost:27017/vmt-test';
-const ssoDbUri = 'mongodb://localhost:27017/mtlogin_test';
+const encDbUri = 'mongodb://localhost:27017/encompass_stage';
+const vmtDbUri = 'mongodb://localhost:27017/vmt_staging';
+const ssoDbUri = 'mongodb://localhost:27017/mtlogin_stage';
 
 export const addEncUsers = async function(): Promise<void> {
   let alreadyAddedUsers = 0;
@@ -20,7 +23,11 @@ export const addEncUsers = async function(): Promise<void> {
     let encUsers = await find(encDb, 'users');
 
     let addedUsers = encUsers.map(
-      async (encUser): Promise<FindAndModifyWriteOpResultObject | boolean> => {
+      async (
+        encUser,
+      ): Promise<
+        FindAndModifyWriteOpResultObject | boolean | InsertOneWriteOpResult
+      > => {
         let isAlreadyAdded = !isNull(
           await ssoDb.collection('users').findOne({ encUserId: encUser._id }),
         );
@@ -40,7 +47,7 @@ export const addEncUsers = async function(): Promise<void> {
           // so just update the encUserId
           addedVmtUsers++;
           vmtAlias.encUserId = encUser._id;
-          return vmtAlias.save();
+          return ssoDb.collection('users').insertOne(vmtAlias);
         }
         newlyAdded++;
 
