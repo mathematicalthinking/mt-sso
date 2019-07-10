@@ -3,6 +3,9 @@ import { extractBearerToken, verifyJWT } from '../utilities/jwt';
 import createError from 'http-errors';
 import jwt from 'jsonwebtoken';
 
+import { getIssuerName, getIssuerHost } from '../config/jwt_issuers';
+import { VerifiedApiToken } from '../types';
+
 export const verifyBearerToken = (
   req: express.Request,
   res: express.Response,
@@ -34,10 +37,45 @@ export const verifyRequestOrigin = async (
     audience: allowedAudience,
   };
   try {
-    let verifyResults = await verifyJWT(bearerToken, secret, options);
-    req.mt.auth.issuer = verifyResults.iss;
+    let verifyResults: VerifiedApiToken = await verifyJWT(
+      bearerToken,
+      secret,
+      options,
+    );
+    req.mt.auth.issuer.id = verifyResults.iss;
+
+    req.mt.auth.issuer.name = getIssuerName(verifyResults.iss);
+    req.mt.auth.issuer.host = getIssuerHost(verifyResults.iss);
+
+    if (verifyResults.ssoId) {
+      req.mt.auth.ssoId = verifyResults.ssoId;
+    }
     next();
   } catch (err) {
     next(new createError[401]());
   }
+};
+
+const getIssuerIdFromReq = (req: express.Request): string | undefined => {
+  return req.mt.auth.issuer.id;
+};
+
+export const getIssuerNameFromReq = (
+  req: express.Request,
+): string | undefined => {
+  let issuerId = getIssuerIdFromReq(req);
+  if (issuerId === undefined) {
+    return;
+  }
+  return getIssuerName(issuerId);
+};
+
+export const getIssuerUrlFromReq = (
+  req: express.Request,
+): string | undefined => {
+  let issuerId = getIssuerIdFromReq(req);
+  if (issuerId === undefined) {
+    return;
+  }
+  return getIssuerHost(issuerId);
 };

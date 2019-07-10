@@ -6,16 +6,22 @@ declare global {
     interface Request {
       mt: {
         auth: {
-          redirectURL?: string;
-          successRedirectUrl?: string;
-          failureRedirectUrl?: string;
           bearerToken: string;
           user?: UserDocument;
           allowedIssuers?: string[];
           signup: {
             user?: UserDocument;
           };
-          issuer: string;
+          issuer: {
+            id?: string;
+            name?: string;
+            host?: string;
+          };
+          ssoId: string;
+        };
+        oauth: {
+          successRedirectUrl: string;
+          failureRedirectUrl: string;
         };
       };
     }
@@ -36,11 +42,13 @@ declare global {
       ENC_GMAIL_USERNAME: string;
       ENC_GMAIL_PASSWORD: string;
       ENC_JWT_ISSUER_ID: string;
+      ENC_OAUTH_FAILURE_REDIRECT_PATH: string;
       VMT_URL: string;
       VMT_PATH_TO_MODELS: string;
       VMT_GMAIL_USERNAME: string;
       VMT_GMAIL_PASSWORD: string;
       VMT_JWT_ISSUER_ID: string;
+      VMT_OAUTH_FAILURE_REDIRECT_PATH: string;
       SSO_COOKIE_DOMAIN: string;
     }
   }
@@ -220,3 +228,11 @@ export interface GoogleSignupResponse {
 export type RevokedTokenDocument = mongoose.Document & {
   encodedToken: string;
 };
+
+export interface VerifiedApiToken {
+  iss: string;
+  aud: string;
+  exp: number;
+  iat: number;
+  ssoId: string;
+}
