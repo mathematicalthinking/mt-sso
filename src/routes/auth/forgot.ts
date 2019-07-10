@@ -2,6 +2,7 @@ import { Router } from 'express';
 const router = Router();
 
 import { forgotPassword } from '../../controllers/forgotPassword';
-router.post('/password', forgotPassword);
+import { validateForgotPasswordRequest } from '../../validators/forgotPassword';
 
+router.post('/password', validateForgotPasswordRequest, forgotPassword);
 export default router;

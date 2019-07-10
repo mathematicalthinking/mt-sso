@@ -5,13 +5,17 @@ import { MongooseOId, UserDocument, VerifiedMtTokenPayload } from '../types';
 
 const SSOSecret = process.env.MT_USER_JWT_SECRET;
 
-const SSO_TOKEN_EXPIRY = '1d';
-const API_TOKEN_EXPIRY = 6000; // 30m
+import {
+  accessCookie,
+  refreshCookie,
+  accessToken,
+  apiToken,
+} from '../constants/auth';
 
 export function signJWT(
   payload: string | object | Buffer,
   secret: jwt.Secret,
-  options?: jwt.SignOptions
+  options?: jwt.SignOptions,
 ): Promise<string> {
   return new Promise(
     (resolve, reject): void => {
@@ -25,33 +29,39 @@ export function signJWT(
           } else {
             resolve(encoded);
           }
-        }
+        },
       );
-    }
+    },
   );
 }
 
-export function generateSSOToken(mtUser: UserDocument): Promise<string> {
+export function generateAccessToken(mtUser: UserDocument): Promise<string> {
   let { _id, encUserId, vmtUserId } = mtUser;
 
   let payload = {
-    mtUserId: _id,
+    ssoId: _id,
     encUserId,
     vmtUserId,
   };
   let options = {
-    expiresIn: SSO_TOKEN_EXPIRY,
+    expiresIn: accessToken.expiresIn,
+    issuer: process.env.JWT_ISSUER_ID,
+    subject: 'access',
+    audience: [process.env.ENC_JWT_ISSUER_ID, process.env.VMT_JWT_ISSUER_ID],
   };
 
   return signJWT(payload, SSOSecret, options);
 }
 
 export async function generateAPIToken(
-  mtUserId: MongooseOId,
-  expiration: number = API_TOKEN_EXPIRY
+  ssoId: MongooseOId,
+  expiration: string = apiToken.expiresIn,
 ): Promise<string> {
-  let payload = { isValid: true, mtUserId };
-  let options: jwt.SignOptions = { expiresIn: expiration };
+  let payload = { isValid: true, ssoId };
+  let options: jwt.SignOptions = {
+    expiresIn: expiration,
+    issuer: process.env.JWT_ISSUER_ID,
+  };
 
   return signJWT(payload, SSOSecret, options);
 }
@@ -67,7 +77,7 @@ export function extractBearerToken(req: express.Request): string | undefined {
 export function verifyJWT(
   token: string,
   key: string | Buffer,
-  options?: jwt.VerifyOptions
+  options?: jwt.VerifyOptions,
 ): Promise<any> {
   return new Promise(
     (resolve, reject): void => {
@@ -75,35 +85,20 @@ export function verifyJWT(
         token,
         key,
         options || {},
-        (err: Error, decoded: string | object): void => {
+        (err: jwt.JsonWebTokenError, decoded: string | object): void => {
           if (err) {
             reject(err);
           } else {
             resolve(decoded);
           }
-        }
+        },
       );
-    }
+    },
   );
 }
 
-export async function getVerifiedApiJWT(
-  req: express.Request
-): Promise<any | null> {
-  let authToken = extractBearerToken(req);
-  if (authToken === undefined) {
-    return null;
-  }
-  try {
-    return verifyJWT(authToken, SSOSecret);
-  } catch (err) {
-    // invalid token
-    return null;
-  }
-}
-
 export async function verifySSOToken(
-  token: string
+  token: string,
 ): Promise<VerifiedMtTokenPayload | null> {
   try {
     return verifyJWT(token, SSOSecret);
@@ -112,3 +107,71 @@ export async function verifySSOToken(
     return null;
   }
 }
+
+export const setSsoCookie = (res: express.Response, token: string): void => {
+  let doSetSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+
+  let options: express.CookieOptions = {
+    httpOnly: true,
+    maxAge: accessCookie.maxAge,
+    secure: doSetSecure,
+    domain: process.env.SSO_COOKIE_DOMAIN,
+  };
+
+  res.cookie(accessCookie.name, token, options);
+};
+
+export const generateRefreshToken = (mtUser: UserDocument): Promise<string> => {
+  let { _id, encUserId, vmtUserId } = mtUser;
+
+  let payload = {
+    ssoId: _id,
+    encUserId,
+    vmtUserId,
+  };
+  let options = {
+    issuer: process.env.JWT_ISSUER_ID,
+    subject: 'refresh',
+    audience: [process.env.ENC_JWT_ISSUER_ID, process.env.VMT_JWT_ISSUER_ID],
+    // expiresIn: refreshToken.expiresIn,
+  };
+
+  return signJWT(payload, SSOSecret, options);
+};
+
+export const setSsoRefreshCookie = (
+  res: express.Response,
+  token: string,
+): void => {
+  let doSetSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+
+  let options: express.CookieOptions = {
+    httpOnly: true,
+    maxAge: refreshCookie.maxAge,
+    secure: doSetSecure,
+    domain: process.env.SSO_COOKIE_DOMAIN,
+  };
+
+  res.cookie(refreshCookie.name, token, options);
+};
+
+export const clearAccessCookie = (res: express.Response): void => {
+  let isSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  let domain = process.env.SSO_COOKIE_DOMAIN;
+
+  let options = { domain, httpOnly: true, secure: isSecure };
+
+  res.clearCookie(accessCookie.name, options);
+};
+
+export const clearRefreshCookie = (res: express.Response): void => {
+  let isSecure =
+    process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
+  let domain = process.env.SSO_COOKIE_DOMAIN;
+
+  let options = { domain, httpOnly: true, secure: isSecure };
+  res.clearCookie(refreshCookie.name, options);
+};

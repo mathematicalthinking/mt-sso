@@ -1,10 +1,27 @@
 /* eslint-disable @typescript-eslint/camelcase */
+import express from 'express';
+import axios from 'axios';
+import { isNil } from 'lodash';
+
 import User from '../../models/User';
-import { GoogleOauthProfileResponse, UserDocument } from '../../types';
+import {
+  GoogleOauthProfileResponse,
+  GoogleSignupResponse,
+  GoogleOauthTokenResponse,
+} from '../../types';
+import {
+  generateAPIToken,
+  setSsoCookie,
+  generateAccessToken,
+  generateRefreshToken,
+  setSsoRefreshCookie,
+} from '../../utilities/jwt';
+import { createEncUser, createVmtUser } from '../../controllers/localSignup';
+import { getAuthRedirectURL } from '../../middleware/user-auth';
 
 export const handleUserProfile = async (
-  userProfile: GoogleOauthProfileResponse
-): Promise<UserDocument> => {
+  userProfile: GoogleOauthProfileResponse,
+): Promise<GoogleSignupResponse> => {
   let { sub, given_name, family_name, picture, email } = userProfile;
 
   // check if user exists already with username = to email
@@ -15,7 +32,7 @@ export const handleUserProfile = async (
   });
 
   if (existingUser === null) {
-    return User.create({
+    let mtUser = await User.create({
       username: email,
       email,
       googleId: sub,
@@ -24,28 +41,138 @@ export const handleUserProfile = async (
       googleProfilePic: picture,
       isEmailConfirmed: true,
     });
+
+    return {
+      mtUser,
+      message: null,
+    };
   }
 
-  if (typeof existingUser.googleId !== 'string') {
-    // add google profile info to existing user
-    existingUser.googleId = sub;
+  // email already associated with an account
 
-    // convenient naming for looping
-    let googleProfilePic = picture;
-    let firstName = given_name;
-    let lastName = family_name;
+  return {
+    mtUser: null,
+    message: 'There is already an account associated with that email',
+  };
+};
 
-    for (let detail of [firstName, lastName, googleProfilePic, email]) {
-      // set google profile detail if not already set on existing user
-      if (
-        typeof detail === 'string' &&
-        typeof existingUser[detail] !== 'string'
-      ) {
-        existingUser[detail] = detail;
-      }
+export const googleCallback = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let { code } = req.query;
+    if (code === undefined) {
+      return;
     }
 
-    await existingUser.save();
+    if (code) {
+      // exchange code for access token
+      let googleEndpoint = `https://www.googleapis.com/oauth2/v4/token`;
+      let params = {
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: process.env.GOOGLE_CALLBACK_URL,
+        grant_type: 'authorization_code',
+      };
+
+      let results = await axios.post(googleEndpoint, params);
+
+      let resultsData: GoogleOauthTokenResponse = results.data;
+
+      let { access_token } = resultsData;
+      let userProfileEndpoint = 'https://www.googleapis.com/oauth2/v3/userinfo';
+
+      let config = {
+        headers: { Authorization: 'Bearer ' + access_token },
+      };
+
+      let profileResults = await axios.get(userProfileEndpoint, config);
+
+      let profile: GoogleOauthProfileResponse = profileResults.data;
+
+      let { mtUser } = await handleUserProfile(profile);
+      if (mtUser === null) {
+        let redirectURL =
+          req.cookies.redirectURL || process.env.DEFAULT_REDIRECT_URL;
+        let loginRoutePath: string;
+
+        if (redirectURL === process.env.ENC_URL) {
+          loginRoutePath = '/#/auth/login';
+        } else {
+          loginRoutePath = '/login';
+        }
+
+        res.redirect(
+          `${redirectURL}${loginRoutePath}?oauthError=emailUnavailable`,
+        );
+
+        return;
+      }
+      // What is best way to know if user is signing in with google for the first time?
+      // Should never have only one of encUserId / vmtUserId ... but what if one failed for some reason?
+
+      let isNewUser = isNil(mtUser.encUserId);
+
+      if (isNewUser) {
+        let apiToken = await generateAPIToken(mtUser._id);
+
+        let [encUser, vmtUser] = await Promise.all([
+          createEncUser(mtUser, {}, apiToken, 'google'),
+          createVmtUser(mtUser, {}, apiToken, 'google'),
+        ]);
+
+        mtUser.encUserId = encUser._id;
+        mtUser.vmtUserId = vmtUser._id;
+
+        await mtUser.save();
+      }
+
+      let [accessToken, refreshToken] = await Promise.all([
+        generateAccessToken(mtUser),
+        generateRefreshToken(mtUser),
+      ]);
+
+      setSsoCookie(res, accessToken);
+      setSsoRefreshCookie(res, refreshToken);
+
+      let redirectURL =
+        req.cookies.redirectURL || process.env.DEFAULT_REDIRECT_URL;
+
+      res.redirect(redirectURL);
+    }
+  } catch (err) {
+    next(err);
   }
-  return existingUser;
+};
+
+export const googleOauth = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let googleEndpoint = `https://accounts.google.com/o/oauth2/v2/auth`;
+
+    let clientId = process.env.GOOGLE_CLIENT_ID;
+    let responseType = 'code';
+    let scope = 'profile%20email';
+    let redirectURI = process.env.GOOGLE_CALLBACK_URL;
+    let includeScopes = true;
+
+    let url = `${googleEndpoint}?client_id=${clientId}&response_type=${responseType}&scope=${scope}&redirect_uri=${redirectURI}&include_granted_scopes=${includeScopes}`;
+
+    let options: express.CookieOptions = {
+      httpOnly: true,
+      maxAge: 300000, // 5min,
+    };
+
+    res.cookie('redirectURL', getAuthRedirectURL(req), options);
+
+    res.redirect(url);
+  } catch (err) {
+    next(err);
+  }
 };

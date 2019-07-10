@@ -1,12 +1,16 @@
-import * as express from 'express';
-
-import * as Joi from '@hapi/joi';
+import express from 'express';
+import bcrypt from 'bcrypt';
+import createError from 'http-errors';
 
 import User from '../models/User';
-import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
-import { VerifiedMtTokenPayload, UserDocument } from '../types';
-
+import RevokedToken from '../models/RevokedToken';
+import {
+  VerifiedMtTokenPayload,
+  UserDocument,
+  EncSignUpRequest,
+  VmtSignUpRequest,
+  RevokedTokenDocument,
+} from '../types';
 import { verifyJWT, extractBearerToken } from '../utilities/jwt';
 
 const secret = process.env.MT_USER_JWT_SECRET;
@@ -17,64 +21,48 @@ interface LoginResult {
 }
 
 export const getUserFromLogin = async (
-  username: unknown,
-  password: unknown
+  username: string,
+  password: string,
 ): Promise<LoginResult> => {
-  let usernameLower =
-    typeof username === 'string' ? username.toLowerCase() : '';
-
   let user: UserDocument | null = await User.findOne({
-    username: usernameLower,
-  }).lean();
-
-  let results: LoginResult = {
-    user,
-    errorMessage: null,
-  };
+    username,
+  });
 
   if (user === null) {
-    results.errorMessage = 'Incorrect username';
-    return results;
+    return {
+      errorMessage: 'Incorrect username',
+      user: null,
+    };
   }
 
   let isPasswordValid: boolean = await bcrypt.compare(password, user.password);
-
   if (isPasswordValid) {
-    return results;
+    return {
+      user,
+      errorMessage: null,
+    };
   }
 
   // invalid password
 
-  results.errorMessage = 'Incorrect password';
-  return results;
-};
-
-export const generateToken = async (user: UserDocument): Promise<string> => {
-  let { _id, encUserId, vmtUserId } = user;
-
-  let payload = {
-    mtUserId: _id,
-    encUserId,
-    vmtUserId,
+  return {
+    errorMessage: 'Incorrect password',
+    user: null,
   };
-  let options = {
-    expiresIn: '1d',
-  };
-
-  return jwt.sign(payload, secret, options);
 };
 
 export const getMtUser = async (
-  req: express.Request
+  req: express.Request,
 ): Promise<VerifiedMtTokenPayload | null> => {
   try {
-    let mtToken = extractBearerToken(req);
-    if (!mtToken) {
+    let accessToken = extractBearerToken(req);
+
+    if (accessToken === undefined) {
       return null;
     }
 
     // if token is not verified, error will be thrown
-    return verifyJWT(mtToken, secret);
+    return verifyJWT(accessToken, secret);
   } catch (err) {
     return null;
   }
@@ -83,7 +71,7 @@ export const getMtUser = async (
 export const prepareMtUser = async (
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ): Promise<void> => {
   let verifiedPayload: VerifiedMtTokenPayload | null = await getMtUser(req);
 
@@ -91,9 +79,9 @@ export const prepareMtUser = async (
     return next();
   }
 
-  let { mtUserId } = verifiedPayload;
+  let { ssoId } = verifiedPayload;
 
-  let mtUser: UserDocument | null = await User.findById(mtUserId).lean();
+  let mtUser: UserDocument | null = await User.findById(ssoId).lean();
   if (mtUser !== null) {
     req.mt.auth.user = mtUser;
   }
@@ -105,7 +93,93 @@ export const getUser = (req: express.Request): UserDocument | undefined => {
 };
 
 export const getAuthRedirectURL = (
-  req: express.Request
+  req: express.Request,
 ): string | undefined => {
   return req.mt.auth.redirectURL;
+};
+
+export const verifySignupCredentialsAvailability = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let { username, email }: EncSignUpRequest | VmtSignUpRequest = req.body;
+
+    let filter: any = { username };
+
+    if (email !== undefined) {
+      filter = { $or: [{ username }, { email }] };
+    }
+
+    let existingUser: UserDocument | null = await User.findOne(filter).lean();
+
+    if (existingUser === null) {
+      // username and email are available
+      return next();
+    }
+    // username or email is taken
+    let isUsernameTaken = existingUser.username === username;
+    let noun = isUsernameTaken ? 'username' : 'email address';
+    let message = `There already exists a user with that ${noun}`;
+    res.json({ message, existingUser });
+    return;
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const hashSignupPassword = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let { password }: EncSignUpRequest | VmtSignUpRequest = req.body;
+
+    let hashedPass = await bcrypt.hash(password, 12);
+    req.body.password = hashedPass;
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const isTokenNonRevoked = async (token: string): Promise<boolean> => {
+  let revokedToken: RevokedTokenDocument | null = await RevokedToken.findOne({
+    encodedToken: token,
+  }).lean();
+  return revokedToken === null;
+};
+
+export const validateRefreshToken = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  try {
+    let encodedToken = req.body.refreshToken;
+    if (encodedToken === undefined) {
+      return next(new createError[401]());
+    }
+
+    let [isTokenValid, verifiedToken] = await Promise.all([
+      isTokenNonRevoked(encodedToken),
+      verifyJWT(encodedToken, secret),
+    ]);
+    if (isTokenValid && verifiedToken) {
+      // get sso user from db and put on req for controller
+      let user = await User.findById(verifiedToken.ssoId).lean();
+      if (user === null) {
+        return next(new createError[401]());
+      }
+      req.mt.auth.user = user;
+      return next();
+    }
+    // refresh token has been revoked or is invalid
+    return next(new createError[401]());
+  } catch (err) {
+    console.log('validate refresh token err: ', err);
+    next(err);
+  }
 };

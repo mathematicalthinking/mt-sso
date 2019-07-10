@@ -12,7 +12,7 @@ const clearDB = async (): Promise<any> => {
 const seedCollection = (
   db: mongoose.Connection,
   collectionName: string,
-  data: any[]
+  data: any[],
 ): Promise<InsertWriteOpResult> => {
   return db.collection(collectionName).insertMany(data);
 };
@@ -23,17 +23,19 @@ export const seed = async (collections = Object.keys(data)): Promise<void> => {
 
     let db = mongoose.connection;
 
-    let seededCollections = collections.map(collectionName => {
-      return seedCollection(
-        db,
-        collectionName,
-        (<any>data)[collectionName]
-      ).then(
-        (writeResults: InsertWriteOpResult): any => {
-          return `${collectionName}: ${writeResults.result.n}`;
-        }
-      );
-    });
+    let seededCollections = collections.map(
+      (collectionName): Promise<{ [index: string]: number }[]> => {
+        return seedCollection(
+          db,
+          collectionName,
+          (<any>data)[collectionName],
+        ).then(
+          (writeResults: InsertWriteOpResult): any => {
+            return `${collectionName}: ${writeResults.result.n}`;
+          },
+        );
+      },
+    );
 
     let results = await Promise.all(seededCollections);
 

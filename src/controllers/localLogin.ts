@@ -1,17 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 
-import { getUserFromLogin, generateToken } from '../middleware/user-auth';
+import { getUserFromLogin } from '../middleware/user-auth';
+import { LoginRequest } from '../types';
+import { generateRefreshToken, generateAccessToken } from '../utilities/jwt';
 
 export const jwtLogin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
-    let { username, password } = req.body;
-
+    let { username, password }: LoginRequest = req.body;
     let { user, errorMessage } = await getUserFromLogin(username, password);
-
     if (user === null) {
       // send error
       res.json({
@@ -21,12 +21,14 @@ export const jwtLogin = async (
       return;
     }
 
-    let token = await generateToken(user);
-
+    let [accessToken, refreshToken] = await Promise.all([
+      generateAccessToken(user),
+      generateRefreshToken(user),
+    ]);
     res.json({
       user,
-      message: errorMessage,
-      mtToken: token,
+      accessToken,
+      refreshToken,
     });
     return;
   } catch (err) {

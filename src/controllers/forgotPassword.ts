@@ -3,44 +3,34 @@ import * as express from 'express';
 import { getResetToken } from '../utilities/tokens';
 import User from '../models/User';
 import { sendEmailSMTP } from '../utilities/emails';
-import { getVerifiedApiJWT } from '../utilities/jwt';
 
 import { sendError } from '../utilities/errors';
 
 import { getIssuerName } from '../config/jwt_issuers';
 import { getAppHost } from '../config/app_urls';
-
-interface ForgotPasswordRequest {
-  username?: unknown;
-  email: unknown;
-}
+import createError from 'http-errors';
 
 export const forgotPassword = async function(
   req: express.Request,
   res: express.Response,
-  next: express.NextFunction
+  next: express.NextFunction,
 ): Promise<void | express.Response> {
   let token;
   let user;
 
   try {
-    let verifiedJWTPayload = await getVerifiedApiJWT(req);
-
-    if (verifiedJWTPayload === null) {
-      return sendError.NotAuthorizedError(null, res);
-    }
-
-    let appName = getIssuerName(verifiedJWTPayload.iss);
+    let issuerId = req.mt.auth.issuer;
+    let appName = getIssuerName(issuerId);
 
     if (appName === null) {
-      return sendError.NotAuthorizedError(null, res);
+      return next(new createError[403]());
     }
 
     let host = getAppHost(appName);
 
     if (host === undefined) {
       // should never happen
-      return sendError.InternalError(null, res);
+      return next(new createError[500]());
     }
 
     token = await getResetToken(20);
@@ -69,7 +59,7 @@ export const forgotPassword = async function(
       // invalid request
       return sendError.InvalidContentError(
         'You must provide a valid username or email',
-        res
+        res,
       );
     }
 
@@ -99,6 +89,6 @@ export const forgotPassword = async function(
   } catch (err) {
     console.error(`Error auth/forgot: ${err}`);
     console.trace();
-    return res.status(500).json({ message: err.message });
+    next(new createError[500]());
   }
 };

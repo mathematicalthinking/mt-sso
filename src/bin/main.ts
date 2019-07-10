@@ -15,5 +15,5 @@ app.listen(
   (): void => {
     console.log(`Application is listening on port ${port}.`);
     initializeDb();
-  }
+  },
 );

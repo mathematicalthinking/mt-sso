@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import * as mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 declare global {
   namespace Express {
@@ -7,7 +7,15 @@ declare global {
       mt: {
         auth: {
           redirectURL?: string;
+          successRedirectUrl?: string;
+          failureRedirectUrl?: string;
+          bearerToken: string;
           user?: UserDocument;
+          allowedIssuers?: string[];
+          signup: {
+            user?: UserDocument;
+          };
+          issuer: string;
         };
       };
     }
@@ -33,14 +41,14 @@ declare global {
       VMT_GMAIL_USERNAME: string;
       VMT_GMAIL_PASSWORD: string;
       VMT_JWT_ISSUER_ID: string;
+      SSO_COOKIE_DOMAIN: string;
     }
   }
 }
 
-export type MongooseOId = mongoose.Types.ObjectId;
-
+export type MongooseOId = mongoose.Schema.Types.ObjectId;
 export interface VerifiedMtTokenPayload {
-  mtUserId: MongooseOId;
+  ssoId: MongooseOId;
   encUserId: MongooseOId;
   vmtUserId: MongooseOId;
 }
@@ -58,8 +66,8 @@ export type UserDocument = mongoose.Document & {
   encUserId?: MongooseOId;
   vmtUserId?: MongooseOId;
   email?: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   googleId?: string;
   googleProfilePic: string;
   resetPasswordToken?: string;
@@ -81,16 +89,16 @@ export type EmailTemplateGenerator = (
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ) => EmailTemplateHash;
 
-export interface EncUserDocument {
+export type EncUserDocument = mongoose.Document & {
   _id: MongooseOId;
   firstName?: string;
   lastName?: string;
   username: string;
   email?: string;
-  mtUserId?: MongooseOId;
+  ssoId?: MongooseOId;
   organization?: MongooseOId;
   organizationRequest?: string;
   location?: string;
@@ -103,27 +111,7 @@ export interface EncUserDocument {
   actingRole: string;
   createDate: Date;
   lastModifiedDate: Date;
-}
-
-export interface EncSignUpDetails {
-  firstName?: string;
-  lastName?: string;
-  username: string;
-  email?: string;
-  mtUserId?: MongooseOId;
-  organization?: MongooseOId;
-  organizationRequest?: string;
-  location?: string;
-  isAuthorized: boolean;
-  requestReason?: string;
-  accountType: string;
-  createdBy: MongooseOId;
-  authorizedBy?: MongooseOId;
-  isEmailConfirmed: boolean;
-  actingRole: string;
-  createDate: Date;
-  lastModifiedDate: Date;
-}
+};
 
 export interface VmtUserDocument {
   _id: MongooseOId;
@@ -131,28 +119,10 @@ export interface VmtUserDocument {
   lastName?: string;
   username: string;
   email?: string;
-  mtUserId?: MongooseOId;
+  ssoId?: MongooseOId;
   accountType: string;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface VmtSignupDetails {
-  firstName?: string;
-  lastName?: string;
-  username: string;
-  email?: string;
-  mtUserId?: MongooseOId;
-  accountType: string;
-  isEmailConfirmed: boolean;
-}
-
-export interface SignUpDetails {
-  firstName?: string;
-  lastName?: string;
-  password: string;
-  email?: string;
-  username: string;
 }
 
 export interface GoogleOauthTokenResponse {
@@ -181,3 +151,72 @@ export enum EncAccountType {
   P = 'P',
   A = 'A',
 }
+
+export type EncUserModel = mongoose.Model<EncUserDocument>;
+
+export interface LocalSignupRequest {
+  firstName: string;
+  lastName: string;
+  password: string;
+  email?: string;
+  username: string;
+}
+
+export interface LoginResponse {
+  user: UserDocument | null;
+  message: string | null;
+  accessToken?: string;
+  refreshToken?: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface SignupResponse {
+  message?: string;
+  existingUser?: UserDocument;
+  encUser?: EncUserDocument;
+  vmtUser?: VmtUserDocument;
+  accessToken?: string;
+  refreshToken?: string;
+}
+
+export interface ValidationErrorResponse {
+  message: string;
+  field?: string;
+  value?: unknown;
+}
+
+export interface EncSignUpRequest {
+  firstName?: string;
+  lastName?: string;
+  location: string;
+  username: string;
+  password: string;
+  email?: string;
+  organization?: string;
+  organizationRequest?: string;
+  requestReason?: string;
+  accountType: string;
+  isAuthorized?: boolean;
+  createdBy?: string;
+}
+export interface VmtSignUpRequest {
+  firstName: string;
+  lastName: string;
+  username: string;
+  password: string;
+  email: string;
+  accountType: string;
+}
+
+export interface GoogleSignupResponse {
+  mtUser: UserDocument | null;
+  message: string | null;
+}
+
+export type RevokedTokenDocument = mongoose.Document & {
+  encodedToken: string;
+};
