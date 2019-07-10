@@ -17,7 +17,6 @@ import {
   setSsoRefreshCookie,
 } from '../../utilities/jwt';
 import { createEncUser, createVmtUser } from '../../controllers/localSignup';
-import { getAuthRedirectURL } from '../../middleware/user-auth';
 
 export const handleUserProfile = async (
   userProfile: GoogleOauthProfileResponse,
@@ -95,19 +94,10 @@ export const googleCallback = async (
 
       let { mtUser } = await handleUserProfile(profile);
       if (mtUser === null) {
-        let redirectURL =
-          req.cookies.redirectURL || process.env.DEFAULT_REDIRECT_URL;
-        let loginRoutePath: string;
+        let redirectUrl = req.cookies.failureRedirectUrl;
+        let error = 'oauthError=emailUnavailable';
 
-        if (redirectURL === process.env.ENC_URL) {
-          loginRoutePath = '/#/auth/login';
-        } else {
-          loginRoutePath = '/login';
-        }
-
-        res.redirect(
-          `${redirectURL}${loginRoutePath}?oauthError=emailUnavailable`,
-        );
+        res.redirect(`${redirectUrl}?${error}`);
 
         return;
       }
@@ -138,8 +128,7 @@ export const googleCallback = async (
       setSsoCookie(res, accessToken);
       setSsoRefreshCookie(res, refreshToken);
 
-      let redirectURL =
-        req.cookies.redirectURL || process.env.DEFAULT_REDIRECT_URL;
+      let redirectURL = req.cookies.successRedirectUrl;
 
       res.redirect(redirectURL);
     }
@@ -169,7 +158,8 @@ export const googleOauth = async (
       maxAge: 300000, // 5min,
     };
 
-    res.cookie('redirectURL', getAuthRedirectURL(req), options);
+    res.cookie('successRedirectUrl', req.mt.oauth.successRedirectUrl, options);
+    res.cookie('failureRedirectUrl', req.mt.oauth.failureRedirectUrl, options);
 
     res.redirect(url);
   } catch (err) {
