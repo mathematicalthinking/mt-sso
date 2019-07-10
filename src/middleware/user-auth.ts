@@ -5,13 +5,12 @@ import createError from 'http-errors';
 import User from '../models/User';
 import RevokedToken from '../models/RevokedToken';
 import {
-  VerifiedMtTokenPayload,
   UserDocument,
   EncSignUpRequest,
   VmtSignUpRequest,
   RevokedTokenDocument,
 } from '../types';
-import { verifyJWT, extractBearerToken } from '../utilities/jwt';
+import { verifyJWT } from '../utilities/jwt';
 
 const secret = process.env.MT_USER_JWT_SECRET;
 
@@ -53,16 +52,15 @@ export const getUserFromLogin = async (
 
 export const getMtUser = async (
   req: express.Request,
-): Promise<VerifiedMtTokenPayload | null> => {
+): Promise<UserDocument | null> => {
   try {
-    let accessToken = extractBearerToken(req);
+    let { ssoId } = req.mt.auth;
 
-    if (accessToken === undefined) {
+    if (ssoId === undefined) {
       return null;
     }
-
+    return User.findById(ssoId);
     // if token is not verified, error will be thrown
-    return verifyJWT(accessToken, secret);
   } catch (err) {
     return null;
   }
@@ -73,29 +71,17 @@ export const prepareMtUser = async (
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
-  let verifiedPayload: VerifiedMtTokenPayload | null = await getMtUser(req);
+  let user = await getMtUser(req);
 
-  if (verifiedPayload === null) {
-    return next();
+  if (user !== null) {
+    req.mt.auth.user = user;
   }
 
-  let { ssoId } = verifiedPayload;
-
-  let mtUser: UserDocument | null = await User.findById(ssoId).lean();
-  if (mtUser !== null) {
-    req.mt.auth.user = mtUser;
-  }
   next();
 };
 
 export const getUser = (req: express.Request): UserDocument | undefined => {
   return req.mt.auth.user;
-};
-
-export const getAuthRedirectURL = (
-  req: express.Request,
-): string | undefined => {
-  return req.mt.auth.redirectURL;
 };
 
 export const verifySignupCredentialsAvailability = async (
@@ -182,4 +168,16 @@ export const validateRefreshToken = async (
     console.log('validate refresh token err: ', err);
     next(err);
   }
+};
+
+export const requireUser = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): void => {
+  let user = getUser(req);
+  if (user === undefined) {
+    return next(new createError[401]());
+  }
+  next();
 };
