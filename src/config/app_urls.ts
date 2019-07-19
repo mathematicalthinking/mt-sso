@@ -1,5 +1,5 @@
 export const appDisplayNamesHash = {
-  vmt: 'VMT',
+  vmt: 'Virtual Math Teams',
   encompass: 'EnCoMPASS',
   mtsso: 'Mathematical Thinking',
 };
