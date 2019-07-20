@@ -15,7 +15,7 @@ type EmailTemplateGenerator = (
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ) => EmailTemplateHash;
 
 export const resetTokenEmail: EmailTemplateGenerator = function(
@@ -24,7 +24,7 @@ export const resetTokenEmail: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
   return {
     to: recipient,
@@ -42,7 +42,7 @@ export const confirmEmailAddress: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
   return {
     to: recipient,
@@ -63,7 +63,7 @@ export const newlyAuthorized: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
   return {
     to: recipient,
@@ -81,7 +81,7 @@ export const newUserNotification: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
   let username;
 

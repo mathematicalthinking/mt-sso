@@ -1,7 +1,7 @@
 import { appDisplayNamesHash } from './app_urls';
 
 export const getEmailAuth = function(
-  appName: string
+  appName: string,
 ): { username: string | undefined; password: string | undefined } {
   let username;
   let password;
@@ -16,3 +16,5 @@ export const getEmailAuth = function(
 
   return { username, password };
 };
+
+export const CONFIRM_EMAIL_TOKEN_EXPIRY = 86400000; // 1 day

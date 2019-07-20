@@ -19,6 +19,10 @@ import {
   VmtSignUpRequest,
 } from '../types';
 
+import { sendEmailSMTP } from '../utilities/emails';
+import { CONFIRM_EMAIL_TOKEN_EXPIRY } from '../config/emails';
+import { getResetToken } from '../utilities/tokens';
+
 export const createEncUser = async (
   mtUser: any,
   requestBody: any,
@@ -191,6 +195,25 @@ export const encSignup = async (
     setSsoRefreshCookie(res, refreshToken);
   }
 
+  let userEmail = mtUser.email;
+  if (typeof userEmail === 'string') {
+    let token = await getResetToken(20);
+
+    mtUser.confirmEmailToken = token;
+    mtUser.confirmEmailExpires = Date.now() + CONFIRM_EMAIL_TOKEN_EXPIRY; // 1 day
+
+    await mtUser.save();
+
+    sendEmailSMTP(
+      userEmail,
+      process.env.ENC_URL,
+      'confirmEmailAddress',
+      token,
+      mtUser,
+      'EnCoMPASS',
+    );
+  }
+
   let results = {
     accessToken,
     refreshToken,
@@ -240,6 +263,24 @@ export const vmtSignup = async (
 
     setSsoCookie(res, accessToken);
     setSsoRefreshCookie(res, refreshToken);
+  }
+
+  let userEmail = mtUser.email;
+  if (typeof userEmail === 'string') {
+    let token = await getResetToken(20);
+
+    mtUser.confirmEmailToken = token;
+    mtUser.confirmEmailExpires = Date.now() + CONFIRM_EMAIL_TOKEN_EXPIRY; // 1 day
+
+    await mtUser.save();
+    sendEmailSMTP(
+      userEmail,
+      process.env.VMT_URL,
+      'confirmEmailAddress',
+      token,
+      mtUser,
+      'Virtual Math Teams',
+    );
   }
 
   let results = {

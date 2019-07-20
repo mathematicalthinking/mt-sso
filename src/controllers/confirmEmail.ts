@@ -6,6 +6,7 @@ import { getUser } from '../middleware/user-auth';
 import { getResetToken } from '../utilities/tokens';
 import { sendEmailSMTP } from '../utilities/emails';
 import { getIssuerNameFromReq, getIssuerUrlFromReq } from '../middleware/auth';
+import { CONFIRM_EMAIL_TOKEN_EXPIRY } from '../config/emails';
 
 export const confirmEmail = async function(
   req: express.Request,
@@ -87,7 +88,7 @@ export const resendConfirmationEmail = async (
     const token = await getResetToken(20);
 
     userRec.confirmEmailToken = token;
-    userRec.confirmEmailExpires = Date.now() + 86400000; // 1 day
+    userRec.confirmEmailExpires = Date.now() + CONFIRM_EMAIL_TOKEN_EXPIRY; // 1 day
 
     let savedUser = await userRec.save();
 

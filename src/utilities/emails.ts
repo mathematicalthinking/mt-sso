@@ -9,7 +9,7 @@ export const sendEmailSMTP = function(
   template: string,
   token: string | null = null,
   userObj: UserDocument,
-  appName: string
+  appName: string,
 ): Promise<string> {
   console.log(`getEmailAuth() return: ${getEmailAuth(appName).username}`);
 
@@ -30,7 +30,7 @@ export const sendEmailSMTP = function(
     token,
     userObj,
     username,
-    appName
+    appName,
   );
   return new Promise(
     (resolve, reject): void => {
@@ -44,10 +44,11 @@ export const sendEmailSMTP = function(
             reject(errorMsg);
           } else {
             let msg = `Email (${template}) sent successfully to ${recipient} from ${username}`;
+            console.log('email success: ', msg);
             resolve(msg);
           }
-        }
+        },
       );
-    }
+    },
   );
 };
