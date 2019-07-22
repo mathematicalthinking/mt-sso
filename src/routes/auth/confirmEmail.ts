@@ -8,5 +8,5 @@ import {
 } from '../../controllers/confirmEmail';
 export default router;
 
-router.get('/confirm/:token', validateBasicToken, confirmEmail);
 router.get('/resend', resendConfirmationEmail);
+router.get('/confirm/:token', validateBasicToken, confirmEmail);

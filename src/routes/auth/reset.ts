@@ -10,15 +10,16 @@ import {
 const router = Router();
 
 router.post(
+  '/password/user',
+  validateResetPasswordById,
+  ctrl.resetPasswordById,
+);
+
+router.post(
   '/password/:token',
   validateBasicToken,
   validateResetPasswordByToken,
   ctrl.resetPassword,
-);
-router.post(
-  '/password/user',
-  validateResetPasswordById,
-  ctrl.resetPasswordById,
 );
 
 router.get('/password/:token', validateBasicToken, ctrl.validateResetToken);
