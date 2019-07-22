@@ -7,6 +7,8 @@ import { getResetToken } from '../utilities/tokens';
 import { sendEmailSMTP } from '../utilities/emails';
 import { getIssuerNameFromReq, getIssuerUrlFromReq } from '../middleware/auth';
 import { CONFIRM_EMAIL_TOKEN_EXPIRY } from '../config/emails';
+import { generateAPIToken } from '../utilities/jwt';
+import axios from 'axios';
 
 export const confirmEmail = async function(
   req: express.Request,
@@ -33,10 +35,28 @@ export const confirmEmail = async function(
 
     const savedUser = await user.save();
 
+    // updated enc and vmt users
+
+    let apiToken = await generateAPIToken(savedUser._id);
+
+    let config = {
+      headers: { Authorization: 'Bearer ' + apiToken },
+    };
+    let vmtUpdate = { isEmailConfirmed: true, updatedAt: Date.now() };
+    let encUpdate = { isEmailConfirmed: true, lastModifiedDate: Date.now() };
+
+    let vmtUrl = `${process.env.VMT_URL}/auth/sso/user/${savedUser.vmtUserId}`;
+    let encUrl = `${process.env.ENC_URL}/auth/sso/user/${savedUser.encUserId}`;
+
+    // should we wait for these to be successfully completed?
+    axios.put(vmtUrl, vmtUpdate, config);
+    axios.put(encUrl, encUpdate, config);
+
     const data = {
       isValid: true,
       isEmailConfirmed: savedUser.isEmailConfirmed,
     };
+
     res.json(data);
   } catch (err) {
     console.log('error confirm email: ', err);
