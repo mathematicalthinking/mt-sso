@@ -44,12 +44,15 @@ export const confirmEmailAddress: EmailTemplateGenerator = function(
   sender: string,
   appName: string,
 ): EmailTemplateHash {
+  let isVmt = appName === 'Virtual Math Teams';
+  let authEndpoint = isVmt ? 'confirmEmail' : '#/auth/confirm';
+
   return {
     to: recipient,
     from: sender,
     subject: `Please confirm your ${appName} email address`,
     text: `You are receiving this because you (or someone else) have signed up for an ${appName} account.
-    Please click on the following link, or paste it into your browser to confirm your email address: ${host}/#/auth/confirm/${token}
+    Please click on the following link, or paste it into your browser to confirm your email address: ${host}/${authEndpoint}/${token}
 
     Once your email address is confirmed, the final step is for an administrator to approve and authorize your account.
 
