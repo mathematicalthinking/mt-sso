@@ -119,6 +119,6 @@ export const resetPasswordByTokenRequest = Joi.object().keys({
 });
 
 export const resetPasswordByIdRequest = Joi.object().keys({
-  id: ObjectIdHexString.required(),
+  ssoId: ObjectIdHexString.required(),
   password: signupPassword,
 });
