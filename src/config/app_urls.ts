@@ -13,6 +13,11 @@ export const getAppHost = (appName: string): string | undefined => {
   }
 };
 
+export enum AppNames {
+  Enc = 'EnCoMPASS',
+  Vmt = 'Virtual Math Teams',
+}
+
 export default {
   appDisplayNamesHash,
   getAppHost,

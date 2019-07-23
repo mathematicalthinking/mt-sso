@@ -1,4 +1,5 @@
 import { EmailTemplateHash, UserDocument } from '../types';
+import { AppNames } from '../config/app_urls';
 
 interface EmailTemplateParams {
   recipient: string;
@@ -26,7 +27,7 @@ export const resetTokenEmail: EmailTemplateGenerator = function(
   sender: string,
   appName: string,
 ): EmailTemplateHash {
-  let isVmt = appName === 'Virtual Math Teams';
+  let isVmt = appName === AppNames.Vmt;
   let authEndpoint = isVmt ? 'resetPassword' : '#/auth/reset';
 
   return {
@@ -47,7 +48,7 @@ export const confirmEmailAddress: EmailTemplateGenerator = function(
   sender: string,
   appName: string,
 ): EmailTemplateHash {
-  let isVmt = appName === 'Virtual Math Teams';
+  let isVmt = appName === AppNames.Vmt;
   let authEndpoint = isVmt ? 'confirmEmail' : '#/auth/confirm';
 
   return {
@@ -89,19 +90,25 @@ export const newUserNotification: EmailTemplateGenerator = function(
   sender: string,
   appName: string,
 ): EmailTemplateHash {
-  let username;
+  let { username } = user;
 
-  if (user) {
-    username = user.username;
+  let isVmt = appName === AppNames.Vmt;
+  let appNameModifier = isVmt ? 'a' : 'an';
+  let subject = `A new user has registered for ${appNameModifier} ${appName} account`;
+
+  let msg;
+
+  if (isVmt) {
+    msg = `A new user (username: ${username}) has registered for a ${appName} account and is now authorized. Please visit ${host}/ for further review.`;
   } else {
-    username = '';
+    msg = `A new user (username: ${username}) has signed up for an ${appName} account and is waiting to be authorized. Please visit ${host}/ to login and navigate to the users portal to view users that are waiting for authorization.`;
   }
 
   return {
     to: recipient,
     from: sender,
-    subject: `A new user has registered an ${appName} account`,
-    text: `A new user (username: ${username}) just signed up for an ${appName} account and is waiting to be authorized. Please visit ${host}/ to login and navigate to the users portal to view users that are waiting for authorization.`,
+    subject,
+    text: msg,
   };
 };
 
