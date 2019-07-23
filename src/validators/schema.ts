@@ -27,16 +27,28 @@ export const encEmail = Joi.when('accountType', {
   otherwise: email.required(),
 });
 
-export const firstName = trimmed.max(50);
+export const firstName = trimmed.max(100);
 export const encFirstName = Joi.when('accountType', {
   is: EncAccountType.S,
   then: firstName,
   otherwise: firstName.required(),
 });
 
-export const lastName = trimmed.max(100);
+export const lastName = trimmed.max(200);
 export const encLastName = Joi.when('accountType', {
   is: EncAccountType.S,
+  then: lastName,
+  otherwise: lastName.required(),
+});
+
+export const vmtFirstName = Joi.when('accountType', {
+  is: VmtAccountType.participant,
+  then: firstName,
+  otherwise: firstName.required(),
+});
+
+export const vmtLastName = Joi.when('accountType', {
+  is: VmtAccountType.participant,
   then: lastName,
   otherwise: lastName.required(),
 });
@@ -81,8 +93,8 @@ export const encSignupRequest = Joi.object()
 // createdBy if created by existing user from app
 
 export const vmtSignupRequest = Joi.object().keys({
-  firstName,
-  lastName,
+  vmtFirstName,
+  vmtLastName,
   username: signupUsername,
   password: signupPassword,
   email: email.required(),
