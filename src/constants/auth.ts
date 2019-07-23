@@ -4,7 +4,7 @@ export const accessCookie = {
 };
 export const refreshCookie = {
   name: 'mt_sso_rf',
-  maxAge: 2592000000, // ms (1 year)
+  // maxAge: 2592000000, // ms (1 year)
 };
 
 export const apiToken = {
@@ -12,8 +12,5 @@ export const apiToken = {
 };
 
 export const accessToken = {
-  expiresIn: '30m', // 30 minutes (zeit/ms)
+  expiresIn: '30s', // 30 minutes (zeit/ms)
 };
-// export const refreshToken = {
-//   expiresIn: '2m', // 30 days (zeit/ms)
-// };

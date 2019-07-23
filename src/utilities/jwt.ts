@@ -149,7 +149,6 @@ export const setSsoRefreshCookie = (
 
   let options: express.CookieOptions = {
     httpOnly: true,
-    maxAge: refreshCookie.maxAge,
     secure: doSetSecure,
     domain: process.env.SSO_COOKIE_DOMAIN,
   };
