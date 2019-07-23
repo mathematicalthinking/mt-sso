@@ -19,9 +19,10 @@ import {
   VmtSignUpRequest,
 } from '../types';
 
-import { sendEmailSMTP } from '../utilities/emails';
+import { sendEmailSMTP, sendEmailsToAdmins } from '../utilities/emails';
 import { CONFIRM_EMAIL_TOKEN_EXPIRY } from '../config/emails';
 import { getResetToken } from '../utilities/tokens';
+import { AppNames } from '../config/app_urls';
 
 export const createEncUser = async (
   mtUser: any,
@@ -210,8 +211,26 @@ export const encSignup = async (
       'confirmEmailAddress',
       token,
       mtUser,
-      'EnCoMPASS',
+      AppNames.Enc,
     );
+
+    if (process.env.NODE_ENV === 'production') {
+      sendEmailsToAdmins(
+        process.env.ENC_URL,
+        AppNames.Enc,
+        'newUserNotification',
+        mtUser,
+      );
+    } else {
+      sendEmailSMTP(
+        process.env.ENC_GMAIL_USERNAME,
+        process.env.ENC_URL,
+        'newUserNotification',
+        null,
+        mtUser,
+        AppNames.Enc,
+      );
+    }
   }
 
   let results = {
@@ -279,8 +298,28 @@ export const vmtSignup = async (
       'confirmEmailAddress',
       token,
       mtUser,
-      'Virtual Math Teams',
+      AppNames.Vmt,
     );
+    // in production send new user email to all admins
+    // otherwise send to test gmail account
+
+    if (process.env.NODE_ENV === 'production') {
+      sendEmailsToAdmins(
+        process.env.VMT_URL,
+        AppNames.Vmt,
+        'newUserNotification',
+        mtUser,
+      );
+    } else {
+      sendEmailSMTP(
+        process.env.VMT_GMAIL_USERNAME,
+        process.env.VMT_URL,
+        'newUserNotification',
+        null,
+        mtUser,
+        AppNames.Vmt,
+      );
+    }
   }
 
   let results = {
