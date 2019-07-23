@@ -50,8 +50,8 @@ export const handleUserProfile = async (
   // email already associated with an account
 
   return {
-    mtUser: null,
-    message: 'There is already an account associated with that email',
+    mtUser: existingUser,
+    message: null,
   };
 };
 
