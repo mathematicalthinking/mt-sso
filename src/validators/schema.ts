@@ -93,8 +93,8 @@ export const encSignupRequest = Joi.object()
 // createdBy if created by existing user from app
 
 export const vmtSignupRequest = Joi.object().keys({
-  vmtFirstName,
-  vmtLastName,
+  firstName: vmtFirstName,
+  lastName: vmtLastName,
   username: signupUsername,
   password: signupPassword,
   email: email.required(),
