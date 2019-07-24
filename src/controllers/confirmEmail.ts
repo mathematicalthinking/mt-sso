@@ -9,6 +9,8 @@ import { getIssuerNameFromReq, getIssuerUrlFromReq } from '../middleware/auth';
 import { CONFIRM_EMAIL_TOKEN_EXPIRY } from '../config/emails';
 import { generateAPIToken } from '../utilities/jwt';
 import axios from 'axios';
+import { isDate } from 'lodash';
+import { AppNames } from '../config/app_urls';
 
 export const confirmEmail = async function(
   req: express.Request,
@@ -18,24 +20,45 @@ export const confirmEmail = async function(
   try {
     const user = await User.findOne({
       confirmEmailToken: req.params.token,
-      confirmEmailExpires: { $gt: Date.now() },
     });
-    console.log('confirmEmail Token: ', user);
+
     if (user === null) {
       res.json({
         isValid: false,
-        info: 'Confirm email token is invalid or has expired.',
+        info: 'Confirm email token is invalid',
+      });
+      return;
+    }
+
+    if (user.isEmailConfirmed) {
+      res.json({
+        isValid: false,
+        info: 'Email has already been confirmed',
+      });
+      return;
+    }
+
+    // user has matching token and email has not been confirmed yet
+
+    let expiryDate = user.confirmEmailExpires;
+
+    let isExpired = isDate(expiryDate) && new Date() > expiryDate;
+
+    if (isExpired) {
+      res.json({
+        isValid: false,
+        info: 'Confirm email token is expired',
       });
       return;
     }
 
     user.isEmailConfirmed = true;
-    user.confirmEmailToken = undefined;
-    user.confirmEmailExpires = undefined;
 
+    // keep token details on user in case they try to click link again
+    // should display message saying that their email has already been confirmed
     const savedUser = await user.save();
 
-    // updated enc and vmt users
+    // update enc and vmt users
 
     let apiToken = await generateAPIToken(savedUser._id);
 
@@ -48,13 +71,16 @@ export const confirmEmail = async function(
     let vmtUrl = `${process.env.VMT_URL}/auth/sso/user/${savedUser.vmtUserId}`;
     let encUrl = `${process.env.ENC_URL}/auth/sso/user/${savedUser.encUserId}`;
 
-    // should we wait for these to be successfully completed?
-    axios.put(vmtUrl, vmtUpdate, config);
-    axios.put(encUrl, encUpdate, config);
+    let [vmtUser, encUser] = await Promise.all([
+      axios.put(vmtUrl, vmtUpdate, config),
+      axios.put(encUrl, encUpdate, config),
+    ]);
+    let isVmt = getIssuerNameFromReq(req) === AppNames.Vmt;
 
     const data = {
       isValid: true,
       isEmailConfirmed: savedUser.isEmailConfirmed,
+      user: isVmt ? vmtUser.data : encUser.data,
     };
 
     res.json(data);
@@ -72,12 +98,12 @@ export const resendConfirmationEmail = async (
   try {
     const user = getUser(req);
     if (user === undefined) {
+      // must be logged in to resend confirm email email
       return next(new createError[401]());
     }
 
     let email = user.email;
-
-    if (email === undefined) {
+    if (typeof email !== 'string') {
       // cannot send confirmation email without user email
       res.json({
         isSuccess: false,
