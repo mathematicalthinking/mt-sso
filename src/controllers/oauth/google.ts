@@ -50,7 +50,7 @@ export const handleUserProfile = async (
   // email already associated with an account
   let { googleId } = existingUser;
 
-  if (googleId === undefined) {
+  if (typeof googleId !== 'string') {
     // existing user is not from google sign up
     return {
       mtUser: null,

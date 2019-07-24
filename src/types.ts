@@ -73,7 +73,7 @@ export type UserDocument = mongoose.Document & {
   password: string;
   encUserId?: MongooseOId;
   vmtUserId?: MongooseOId;
-  email?: string;
+  email?: string | null;
   firstName: string;
   lastName: string;
   googleId?: string;
@@ -88,7 +88,14 @@ export type UserDocument = mongoose.Document & {
   updatedAt: Date;
   createdAt: Date;
   isTrashed: boolean;
-  [field: string]: string | MongooseOId | undefined | number | Date | boolean;
+  [field: string]:
+    | string
+    | MongooseOId
+    | undefined
+    | number
+    | Date
+    | boolean
+    | null;
 };
 
 export type EmailTemplateGenerator = (
