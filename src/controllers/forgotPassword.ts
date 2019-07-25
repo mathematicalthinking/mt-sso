@@ -1,4 +1,5 @@
 import * as express from 'express';
+import createError from 'http-errors';
 
 import { getResetToken } from '../utilities/tokens';
 import User from '../models/User';
@@ -6,10 +7,7 @@ import { sendEmailSMTP } from '../utilities/emails';
 
 import { sendError } from '../utilities/errors';
 
-import { getIssuerName } from '../config/jwt_issuers';
-import { getAppHost } from '../config/app_urls';
-import createError from 'http-errors';
-
+import { getIssuerNameFromReq, getIssuerUrlFromReq } from '../middleware/auth';
 export const forgotPassword = async function(
   req: express.Request,
   res: express.Response,
@@ -19,14 +17,13 @@ export const forgotPassword = async function(
   let user;
 
   try {
-    let issuerId = req.mt.auth.issuer;
-    let appName = getIssuerName(issuerId);
+    let appName = getIssuerNameFromReq(req);
 
-    if (appName === null) {
+    if (appName === undefined) {
       return next(new createError[403]());
     }
 
-    let host = getAppHost(appName);
+    let host = getIssuerUrlFromReq(req);
 
     if (host === undefined) {
       // should never happen

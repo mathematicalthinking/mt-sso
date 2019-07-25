@@ -2,10 +2,7 @@ import { isNull, intersection } from 'lodash';
 
 import { connect, find } from './utils';
 import { UserDocument } from '../types';
-import {
-  FindAndModifyWriteOpResultObject,
-  InsertOneWriteOpResult,
-} from 'mongodb';
+import { FindAndModifyWriteOpResultObject } from 'mongodb';
 import { isNonEmptyString } from '../utilities/objects';
 
 const encDbUri = 'mongodb://localhost:27017/encompass_stage';
@@ -189,7 +186,6 @@ export const createVmtCounterparts = async function(): Promise<void> {
         let vmtUser = await vmtDb.collection('users').insertOne({
           username: ssoUser.username,
           email: ssoUser.email,
-          password: ssoUser.password,
           firstName: ssoUser.firstName,
           lastName: ssoUser.lastName,
           createdAt: ssoUser.createdAt,
@@ -197,14 +193,18 @@ export const createVmtCounterparts = async function(): Promise<void> {
           isTrashed: ssoUser.isTrashed,
           isEmailConfirmed: ssoUser.isEmailConfirmed,
           doForcePasswordChange: ssoUser.doForcePasswordChange,
-          confirmEmailExpires: ssoUser.confirmEmailExpires,
-          confirmEmailToken: ssoUser.confirmEmailToken,
-          resetPasswordToken: ssoUser.resetPasswordToken,
-          resetPasswordExpires: ssoUser.resetPasswordExpires,
           googleId: ssoUser.googleId,
           ssoId: ssoUser._id,
           accountType:
             encUser.accountType === 'S' ? 'participant' : 'facilitator',
+          courseTemplates: [],
+          courses: [],
+          rooms: [],
+          activities: [],
+          notifications: [],
+          bothRoles: false,
+          isAdmin: false,
+          seenTour: false,
         });
 
         // update sso user's vmtUserId

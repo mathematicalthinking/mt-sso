@@ -1,5 +1,5 @@
 export const appDisplayNamesHash = {
-  vmt: 'VMT',
+  vmt: 'Virtual Math Teams',
   encompass: 'EnCoMPASS',
   mtsso: 'Mathematical Thinking',
 };
@@ -12,6 +12,11 @@ export const getAppHost = (appName: string): string | undefined => {
     return process.env.VMT_URL;
   }
 };
+
+export enum AppNames {
+  Enc = 'EnCoMPASS',
+  Vmt = 'Virtual Math Teams',
+}
 
 export default {
   appDisplayNamesHash,

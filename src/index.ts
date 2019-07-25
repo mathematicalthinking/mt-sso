@@ -11,9 +11,10 @@ let pathToEnvFile = path.resolve(process.cwd(), envFileName);
 
 require('dotenv').config({ path: pathToEnvFile });
 
-import { prepareRedirectURL, prep, pruneRequestBody } from './middleware/prep';
+import { prep, pruneRequestBody } from './middleware/prep';
 import { prepareMtUser } from './middleware/user-auth';
 import configureCors from './middleware/cors';
+import { verifyBearerToken, verifyRequestOrigin } from './middleware/auth';
 
 // import initializeDb from './dbs/mt';
 
@@ -31,16 +32,29 @@ const configure = (app: express.Application): void => {
   app.use(cookieParser());
   app.use(express.static(join(__dirname, 'public')));
 
-  // middleware
+  // general middleware
   app.use(configureCors);
+
+  // prepares request with empty values
+  // that will be filled in later in mw chain
   app.use(prep);
+
+  // simply redirects to default redirect url
+  app.use('/', indexRouter);
+
+  // oauth requests
+  // we are not verifying the origin/issuerid of these requests
+  // oauth router uses middleware to determine if
+  // redirect url in query string is valid
+
+  app.use('/oauth', oauthRouter);
+
+  app.use(verifyBearerToken);
+  app.use(verifyRequestOrigin);
   app.use(prepareMtUser);
-  app.use(prepareRedirectURL);
   app.use(pruneRequestBody);
 
-  app.use('/', indexRouter);
   app.use('/auth', authRouter);
-  app.use('/oauth', oauthRouter);
 
   // catch 404 and forward to error handler
   app.use(
@@ -66,7 +80,12 @@ const configure = (app: express.Application): void => {
 
     // render the error page
     res.status(err.status || 500);
-    res.render('error');
+    console.log(
+      `SSO error handler: Status: ${err.status}; MEssage: ${err.message}`,
+    );
+    let message = err.message || 'Internal Server Error';
+    res.json(message);
+    // res.render('error');
   });
 };
 

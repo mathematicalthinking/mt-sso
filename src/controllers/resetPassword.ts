@@ -82,9 +82,9 @@ export async function resetPasswordById(
       return sendError.NotAuthorizedError(null, res);
     }
 
-    const { id, password } = req.body;
+    const { ssoId, password } = req.body;
 
-    const user = await User.findById(id);
+    const user = await User.findById(ssoId);
     if (user === null) {
       res.json({
         info: 'Cannot find user',

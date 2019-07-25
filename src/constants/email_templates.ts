@@ -1,4 +1,5 @@
 import { EmailTemplateHash, UserDocument } from '../types';
+import { AppNames } from '../config/app_urls';
 
 interface EmailTemplateParams {
   recipient: string;
@@ -15,7 +16,7 @@ type EmailTemplateGenerator = (
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ) => EmailTemplateHash;
 
 export const resetTokenEmail: EmailTemplateGenerator = function(
@@ -24,14 +25,17 @@ export const resetTokenEmail: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
+  let isVmt = appName === AppNames.Vmt;
+  let authEndpoint = isVmt ? 'resetPassword' : '#/auth/reset';
+
   return {
     to: recipient,
     from: sender,
     subject: `Request to reset your ${appName} password`,
     text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.
-    Please click on the following link, or paste this into your browser to complete the process: ${host}/#/auth/reset/${token}
+    Please click on the following link, or paste this into your browser to complete the process: ${host}/${authEndpoint}/${token}
     If you did not request this, please ignore this email and your password will remain unchanged.`,
   };
 };
@@ -42,14 +46,17 @@ export const confirmEmailAddress: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
+  let isVmt = appName === AppNames.Vmt;
+  let authEndpoint = isVmt ? 'confirmEmail' : '#/auth/confirm';
+
   return {
     to: recipient,
     from: sender,
     subject: `Please confirm your ${appName} email address`,
     text: `You are receiving this because you (or someone else) have signed up for an ${appName} account.
-    Please click on the following link, or paste it into your browser to confirm your email address: ${host}/#/auth/confirm/${token}
+    Please click on the following link, or paste it into your browser to confirm your email address: ${host}/${authEndpoint}/${token}
 
     Once your email address is confirmed, the final step is for an administrator to approve and authorize your account.
 
@@ -63,7 +70,7 @@ export const newlyAuthorized: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
   return {
     to: recipient,
@@ -81,21 +88,27 @@ export const newUserNotification: EmailTemplateGenerator = function(
   token: string | null,
   user: UserDocument,
   sender: string,
-  appName: string
+  appName: string,
 ): EmailTemplateHash {
-  let username;
+  let { username } = user;
 
-  if (user) {
-    username = user.username;
+  let isVmt = appName === AppNames.Vmt;
+  let appNameModifier = isVmt ? 'a' : 'an';
+  let subject = `A new user has registered for ${appNameModifier} ${appName} account`;
+
+  let msg;
+
+  if (isVmt) {
+    msg = `A new user (username: ${username}) has registered for a ${appName} account and is now authorized. Please visit ${host}/ for further review.`;
   } else {
-    username = '';
+    msg = `A new user (username: ${username}) has signed up for an ${appName} account and is waiting to be authorized. Please visit ${host}/ to login and navigate to the users portal to view users that are waiting for authorization.`;
   }
 
   return {
     to: recipient,
     from: sender,
-    subject: `A new user has registered an ${appName} account`,
-    text: `A new user (username: ${username}) just signed up for an ${appName} account and is waiting to be authorized. Please visit ${host}/ to login and navigate to the users portal to view users that are waiting for authorization.`,
+    subject,
+    text: msg,
   };
 };
 

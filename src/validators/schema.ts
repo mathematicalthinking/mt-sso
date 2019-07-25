@@ -1,40 +1,54 @@
 import Joi from '@hapi/joi';
 import { EncAccountType, VmtAccountType } from '../types';
 
-const disallowedUsernames = ['admin', 'encompass'];
+const disallowedUsernames = ['admin', 'encompass', 'vmt', 'virtualmathteams'];
+const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+const usernamePattern = /^[a-z0-9_]{3,30}$/;
 
 const trimmed = Joi.string().trim();
 
 export const signupUsername = trimmed
   .required()
-  .min(4)
-  .max(15)
+  .min(3)
+  .max(30)
   .lowercase()
-  .token()
+  .regex(usernamePattern)
   .invalid(disallowedUsernames);
 
 export const signupPassword = trimmed
   .required()
   .min(10)
-  .max(256);
+  .max(72);
 
-export const email = trimmed.email();
+export const email = trimmed.regex(emailPattern);
 export const encEmail = Joi.when('accountType', {
   is: EncAccountType.S,
   then: email,
   otherwise: email.required(),
 });
 
-export const firstName = trimmed.max(50);
+export const firstName = trimmed.max(100);
 export const encFirstName = Joi.when('accountType', {
   is: EncAccountType.S,
   then: firstName,
   otherwise: firstName.required(),
 });
 
-export const lastName = trimmed.max(100);
+export const lastName = trimmed.max(200);
 export const encLastName = Joi.when('accountType', {
   is: EncAccountType.S,
+  then: lastName,
+  otherwise: lastName.required(),
+});
+
+export const vmtFirstName = Joi.when('accountType', {
+  is: VmtAccountType.participant,
+  then: firstName,
+  otherwise: firstName.required(),
+});
+
+export const vmtLastName = Joi.when('accountType', {
+  is: VmtAccountType.participant,
   then: lastName,
   otherwise: lastName.required(),
 });
@@ -79,8 +93,8 @@ export const encSignupRequest = Joi.object()
 // createdBy if created by existing user from app
 
 export const vmtSignupRequest = Joi.object().keys({
-  firstName,
-  lastName,
+  firstName: vmtFirstName,
+  lastName: vmtLastName,
   username: signupUsername,
   password: signupPassword,
   email: email.required(),
@@ -117,6 +131,6 @@ export const resetPasswordByTokenRequest = Joi.object().keys({
 });
 
 export const resetPasswordByIdRequest = Joi.object().keys({
-  id: ObjectIdHexString.required(),
+  ssoId: ObjectIdHexString.required(),
   password: signupPassword,
 });

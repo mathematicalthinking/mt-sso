@@ -1,9 +1,6 @@
 import { connect, find, findOne } from './utils';
 import { UserDocument } from '../types';
-import {
-  FindAndModifyWriteOpResultObject,
-  InsertOneWriteOpResult,
-} from 'mongodb';
+import { FindAndModifyWriteOpResultObject } from 'mongodb';
 import { isNonEmptyString } from '../utilities/objects';
 
 const encDbUri = 'mongodb://localhost:27017/encompass_stage';
@@ -19,7 +16,7 @@ export const addVmtUsers = async function(): Promise<void> {
     let ssoDb = await connect(ssoDbUri);
     let vmtDb = await connect(vmtDbUri);
 
-    let vmtUsers = await find(vmtDb, 'users');
+    let vmtUsers = await find(vmtDb, 'users', { accountType: { $ne: 'temp' } });
 
     let addedUsers = vmtUsers.map(
       async (vmtUser): Promise<FindAndModifyWriteOpResultObject | boolean> => {
@@ -143,19 +140,22 @@ export const createEncCounterparts = async function(): Promise<void> {
           firstName: ssoUser.firstName,
           lastName: ssoUser.lastName,
           email: ssoUser.email,
-          createdAt: ssoUser.createdAt,
-          updatedAt: ssoUser.updatedAt,
+          createDate: ssoUser.createdAt,
+          lastModifiedDate: ssoUser.updatedAt,
           isTrashed: ssoUser.isTrashed,
           isEmailConfirmed: ssoUser.isEmailConfirmed,
           doForcePasswordChange: ssoUser.doForcePasswordChange,
-          confirmEmailExpires: ssoUser.confirmEmailExpires,
-          confirmEmailToken: ssoUser.confirmEmailToken,
-          resetPasswordToken: ssoUser.resetPasswordToken,
-          resetPasswordExpires: ssoUser.resetPasswordExpires,
           googleId: ssoUser.googleId,
           ssoId: ssoUser._id,
-          password: ssoUser.password,
           accountType: vmtUser.accountType === 'participant' ? 'S' : 'T',
+          sections: [],
+          answers: [],
+          assignments: [],
+          collabWorkspaces: [],
+          hiddenWorkspaces: [],
+          notifications: [],
+          history: [],
+          isAuthorized: true,
         });
 
         // update sso user's encUserId
