@@ -50,6 +50,7 @@ declare global {
       VMT_JWT_ISSUER_ID: string;
       VMT_OAUTH_FAILURE_REDIRECT_PATH: string;
       SSO_COOKIE_DOMAIN: string;
+      VMT_OAUTH_SUCCESS_REDIRECT_PATH: string;
     }
   }
 }
