@@ -1,7 +1,8 @@
-export function getAllowedDomains(): (string | undefined)[] {
-  return [process.env.ENC_URL, process.env.VMT_URL].filter(
-    (url): boolean => url !== undefined
-  );
+export function getAllowedOauthRedirectUrls(): (string | undefined)[] {
+  return [
+    process.env.ENC_URL,
+    `${process.env.VMT_URL}${process.env.VMT_OAUTH_SUCCESS_REDIRECT_PATH}`,
+  ].filter((url): boolean => url !== undefined);
 }
 
-export default getAllowedDomains();
+export default getAllowedOauthRedirectUrls();
