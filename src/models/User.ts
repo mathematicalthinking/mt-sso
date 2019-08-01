@@ -29,6 +29,7 @@ const UserSchema = new Schema(
     isEmailConfirmed: { type: Boolean, default: false },
     doForcePasswordChange: { type: Boolean, default: false },
     lastModifiedBy: { type: ObjectId, ref: 'User' },
+    confirmEmailDate: { type: Date },
   },
   { timestamps: true },
 );
