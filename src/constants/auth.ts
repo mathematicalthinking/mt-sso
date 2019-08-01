@@ -12,5 +12,5 @@ export const apiToken = {
 };
 
 export const accessToken = {
-  expiresIn: '30s', // 30 minutes (zeit/ms)
+  expiresIn: '30m', // 30 minutes (zeit/ms)
 };

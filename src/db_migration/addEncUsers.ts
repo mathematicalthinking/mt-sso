@@ -5,9 +5,9 @@ import { UserDocument } from '../types';
 import { FindAndModifyWriteOpResultObject } from 'mongodb';
 import { isNonEmptyString } from '../utilities/objects';
 
-const encDbUri = 'mongodb://localhost:27017/encompass_stage';
-const vmtDbUri = 'mongodb://localhost:27017/vmt_staging';
-const ssoDbUri = 'mongodb://localhost:27017/mtlogin_stage';
+const encDbUri = 'mongodb://localhost:27017/encompass';
+const vmtDbUri = 'mongodb://localhost:27017/vmt';
+const ssoDbUri = 'mongodb://localhost:27017/mtlogin';
 
 export const addEncUsers = async function(): Promise<void> {
   let alreadyAddedUsers = 0;
@@ -20,7 +20,13 @@ export const addEncUsers = async function(): Promise<void> {
     let encUsers = await find(encDb, 'users');
 
     let addedUsers = encUsers.map(
-      async (encUser): Promise<FindAndModifyWriteOpResultObject | boolean> => {
+      async (
+        encUser,
+      ): Promise<
+        | FindAndModifyWriteOpResultObject
+        | boolean
+        | FindAndModifyWriteOpResultObject[]
+      > => {
         let isAlreadyAdded = !isNull(
           await ssoDb.collection('users').findOne({ encUserId: encUser._id }),
         );
@@ -40,12 +46,24 @@ export const addEncUsers = async function(): Promise<void> {
           // so just update the encUserId
           addedVmtUsers++;
           vmtAlias.encUserId = encUser._id;
-          return ssoDb
+          let ssoDbUpdate = ssoDb
             .collection('users')
             .findOneAndUpdate(
               { _id: vmtAlias._id },
               { $set: { encUserId: encUser._id } },
             );
+          let encDbUpdate = encDb.collection('users').findOneAndUpdate(
+            { _id: encUser._id },
+            {
+              $set: {
+                ssoId: vmtAlias._id,
+                isEmailConfirmed: vmtAlias.isEmailConfirmed,
+                doForcePasswordChange: vmtAlias.doForcePasswordChange,
+              },
+            },
+          );
+
+          return Promise.all([ssoDbUpdate, encDbUpdate]);
         }
         newlyAdded++;
 
@@ -59,6 +77,11 @@ export const addEncUsers = async function(): Promise<void> {
           ? encUser.lastName
           : undefined;
 
+        let isEmailConfirmed =
+          typeof encUser.isEmailConfirmed === 'boolean'
+            ? encUser.isEmailConfirmed
+            : false;
+
         let ssoUser = await ssoDb.collection('users').insertOne({
           username: encUser.username,
           firstName: firstName,
@@ -66,14 +89,14 @@ export const addEncUsers = async function(): Promise<void> {
           password: encUser.password,
           encUserId: encUser._id,
           email: hasEmail ? encUser.email : undefined,
-          createdAt: encUser.createDate,
-          updatedAt: encUser.lastModifiedDate,
+          createdAt: new Date(),
+          updatedAt: new Date(),
           isTrashed: encUser.isTrashed,
           confirmEmailExpires: encUser.confirmEmailExpires,
           confirmEmailToken: encUser.confirmEmailToken,
           resetPasswordToken: encUser.resetPasswordToken,
           resetPasswordExpires: encUser.resetPasswordExpires,
-          isEmailConfirmed: encUser.isEmailConfirmed,
+          isEmailConfirmed: isEmailConfirmed,
           googleId: encUser.googleId,
           doForcePasswordChange: false,
         });
@@ -83,7 +106,7 @@ export const addEncUsers = async function(): Promise<void> {
           .collection('users')
           .findOneAndUpdate(
             { _id: encUser._id },
-            { $set: { ssoId: ssoUser.insertedId } },
+            { $set: { ssoId: ssoUser.insertedId, isEmailConfirmed } },
           );
       },
     );
@@ -188,8 +211,8 @@ export const createVmtCounterparts = async function(): Promise<void> {
           email: ssoUser.email,
           firstName: ssoUser.firstName,
           lastName: ssoUser.lastName,
-          createdAt: ssoUser.createdAt,
-          updatedAt: ssoUser.updatedAt,
+          createdAt: new Date(),
+          updatedAt: new Date(),
           isTrashed: ssoUser.isTrashed,
           isEmailConfirmed: ssoUser.isEmailConfirmed,
           doForcePasswordChange: ssoUser.doForcePasswordChange,

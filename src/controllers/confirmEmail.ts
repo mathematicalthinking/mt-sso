@@ -1,28 +1,33 @@
 import express from 'express';
 import createError from 'http-errors';
-
 import User from '../models/User';
 import { getUser } from '../middleware/user-auth';
 import { getResetToken } from '../utilities/tokens';
 import { sendEmailSMTP } from '../utilities/emails';
 import { getIssuerNameFromReq, getIssuerUrlFromReq } from '../middleware/auth';
 import { CONFIRM_EMAIL_TOKEN_EXPIRY } from '../config/emails';
-import { generateAPIToken } from '../utilities/jwt';
-import axios from 'axios';
-import { isDate } from 'lodash';
+import { isDate, isNil } from 'lodash';
 import { AppNames } from '../config/app_urls';
+import {
+  confirmEncVmtEmails,
+  unconfirmEncVmtEmails,
+} from '../utilities/enc_vmt_updates/confirmEmail';
 
 export const confirmEmail = async function(
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> {
+  let ssoUser;
+  let didConfirmSsoUser = false;
+  let wasEncVmtUpdateSuccess = false;
+
   try {
-    const user = await User.findOne({
+    ssoUser = await User.findOne({
       confirmEmailToken: req.params.token,
     });
 
-    if (user === null) {
+    if (ssoUser === null) {
       res.json({
         isValid: false,
         info: 'Confirm email token is invalid',
@@ -30,7 +35,7 @@ export const confirmEmail = async function(
       return;
     }
 
-    if (user.isEmailConfirmed) {
+    if (ssoUser.isEmailConfirmed) {
       res.json({
         isValid: false,
         info: 'Email has already been confirmed',
@@ -40,7 +45,7 @@ export const confirmEmail = async function(
 
     // user has matching token and email has not been confirmed yet
 
-    let expiryDate = user.confirmEmailExpires;
+    let expiryDate = ssoUser.confirmEmailExpires;
 
     let isExpired = isDate(expiryDate) && new Date() > expiryDate;
 
@@ -52,40 +57,79 @@ export const confirmEmail = async function(
       return;
     }
 
-    user.isEmailConfirmed = true;
+    ssoUser.isEmailConfirmed = true;
+    ssoUser.confirmEmailDate = Date.now();
 
-    // keep token details on user in case they try to click link again
+    // keep token details on ssoUser in case they try to click link again
     // should display message saying that their email has already been confirmed
-    const savedUser = await user.save();
-
     // update enc and vmt users
 
-    let apiToken = await generateAPIToken(savedUser._id);
+    let { vmtUserId, encUserId } = ssoUser;
 
-    let config = {
-      headers: { Authorization: 'Bearer ' + apiToken },
-    };
-    let vmtUpdate = { isEmailConfirmed: true, updatedAt: Date.now() };
-    let encUpdate = { isEmailConfirmed: true, lastModifiedDate: Date.now() };
+    if (isNil(vmtUserId) || isNil(encUserId)) {
+      // should never happen
+      return next(new createError[500]());
+    }
 
-    let vmtUrl = `${process.env.VMT_URL}/auth/sso/user/${savedUser.vmtUserId}`;
-    let encUrl = `${process.env.ENC_URL}/auth/sso/user/${savedUser.encUserId}`;
+    let {
+      wasSuccess,
+      updatedEncUser,
+      updatedVmtUser,
+    } = await confirmEncVmtEmails(encUserId, vmtUserId);
+    console.log(' WAS SUCCESS? ', wasSuccess);
+    console.log('updted enc: ', updatedEncUser);
+    console.log('updted vmt', updatedVmtUser);
 
-    let [vmtUser, encUser] = await Promise.all([
-      axios.put(vmtUrl, vmtUpdate, config),
-      axios.put(encUrl, encUpdate, config),
-    ]);
+    if (wasSuccess === false) {
+      // either enc or vmt update failed
+      // revert any changes and return error without confirming
+      // email on ssoUser
+      await unconfirmEncVmtEmails(encUserId, vmtUserId);
+      return next(
+        new createError[500](
+          'Sorry, an unexpected error occurred. Please try again.',
+        ),
+      );
+    }
+    wasEncVmtUpdateSuccess = true;
+    // save ssoUser once vmt and enc have been updated
+    await ssoUser.save();
+    didConfirmSsoUser = true;
+
     let isVmt = getIssuerNameFromReq(req) === AppNames.Vmt;
 
     const data = {
       isValid: true,
-      isEmailConfirmed: savedUser.isEmailConfirmed,
-      user: isVmt ? vmtUser.data : encUser.data,
+      isEmailConfirmed: ssoUser.isEmailConfirmed,
+      user: isVmt ? updatedVmtUser : updatedEncUser,
+      confirmedEmail: ssoUser.email,
     };
 
     res.json(data);
   } catch (err) {
     console.log('error confirm email: ', err);
+
+    if (isNil(ssoUser)) {
+      return next(new createError[500]());
+    }
+
+    let doRevert = wasEncVmtUpdateSuccess && !didConfirmSsoUser;
+
+    if (doRevert) {
+      let { vmtUserId, encUserId } = ssoUser;
+
+      if (isNil(vmtUserId) || isNil(encUserId)) {
+        // should never happen
+        return next(new createError[500]());
+      }
+      await unconfirmEncVmtEmails(encUserId, vmtUserId);
+
+      return next(
+        new createError[500](
+          'Sorry, an unexpected error occurred. Please try again.',
+        ),
+      );
+    }
     next(err);
   }
 };
