@@ -3,9 +3,9 @@ import { UserDocument } from '../types';
 import { FindAndModifyWriteOpResultObject } from 'mongodb';
 import { isNonEmptyString } from '../utilities/objects';
 
-const encDbUri = 'mongodb://localhost:27017/encompass_stage';
-const vmtDbUri = 'mongodb://localhost:27017/vmt_staging';
-const ssoDbUri = 'mongodb://localhost:27017/mtlogin_stage';
+const encDbUri = 'mongodb://localhost:27017/encompass';
+const vmtDbUri = 'mongodb://localhost:27017/vmt';
+const ssoDbUri = 'mongodb://localhost:27017/mtlogin';
 
 export const addVmtUsers = async function(): Promise<void> {
   let alreadyAddedUsers = 0;
@@ -19,13 +19,21 @@ export const addVmtUsers = async function(): Promise<void> {
     let vmtUsers = await find(vmtDb, 'users', { accountType: { $ne: 'temp' } });
 
     let addedUsers = vmtUsers.map(
-      async (vmtUser): Promise<FindAndModifyWriteOpResultObject | boolean> => {
+      async (
+        vmtUser,
+      ): Promise<
+        | FindAndModifyWriteOpResultObject
+        | boolean
+        | FindAndModifyWriteOpResultObject[]
+      > => {
         let existingUser = await findOne(ssoDb, 'users', {
           vmtUserId: vmtUser._id,
         });
 
         let isAlreadyAdded = existingUser !== null;
         if (isAlreadyAdded) {
+          console.log('existing user: ', existingUser);
+          // need to update the vmt user with ssoId, isEmailConfirmed, etc
           alreadyAddedUsers++;
           return false;
         }
@@ -38,15 +46,29 @@ export const addVmtUsers = async function(): Promise<void> {
         if (encAlias) {
           // Mt user was already created for this vmt user's enc account
           // so just update the vmtUserId
+          // encAlias is sso user
+          console.log('encAlias', encAlias);
           addedEncUsers++;
           encAlias.vmtUserId = vmtUser._id;
-          return ssoDb
+
+          let ssoDbUpdate = ssoDb
             .collection('users')
             .findOneAndUpdate(
               { _id: encAlias._id },
               { $set: { vmtUserId: vmtUser._id } },
             );
-          // return encAlias.save();
+          let vmtDbUpdate = vmtDb.collection('users').findOneAndUpdate(
+            { _id: vmtUser._id },
+            {
+              $set: {
+                ssoId: encAlias._id,
+                isEmailConfirmed: encAlias.isEmailConfirmed,
+                doForcePasswordChange: encAlias.doForcePasswordChange,
+              },
+            },
+          );
+
+          return Promise.all([ssoDbUpdate, vmtDbUpdate]);
         }
         newlyAdded++;
 
@@ -69,8 +91,8 @@ export const addVmtUsers = async function(): Promise<void> {
           lastName: lastName,
           vmtUserId: vmtUser._id,
           email: hasEmail ? vmtUser.email : undefined,
-          createdAt: vmtUser.createdAt,
-          updatedAt: vmtUser.updatedAt,
+          createdAt: new Date(),
+          updatedAt: new Date(),
           isTrashed: vmtUser.isTrashed,
           isEmailConfirmed: hasEmail ? true : false,
           doForcePasswordChange: false,
@@ -81,13 +103,17 @@ export const addVmtUsers = async function(): Promise<void> {
           googleId: vmtUser.googleId,
         });
 
-        // update encompass user with new ssoId
-        return vmtDb
-          .collection('users')
-          .findOneAndUpdate(
-            { _id: vmtUser._id },
-            { $set: { ssoId: ssoUser.insertedId } },
-          );
+        // update vmt user with new ssoId
+        return vmtDb.collection('users').findOneAndUpdate(
+          { _id: vmtUser._id },
+          {
+            $set: {
+              ssoId: ssoUser.insertedId,
+              isEmailConfirmed: hasEmail ? true : false,
+              doForcePasswordChange: false,
+            },
+          },
+        );
       },
     );
 
@@ -140,8 +166,8 @@ export const createEncCounterparts = async function(): Promise<void> {
           firstName: ssoUser.firstName,
           lastName: ssoUser.lastName,
           email: ssoUser.email,
-          createDate: ssoUser.createdAt,
-          lastModifiedDate: ssoUser.updatedAt,
+          createDate: new Date(),
+          lastModifiedDate: new Date(),
           isTrashed: ssoUser.isTrashed,
           isEmailConfirmed: ssoUser.isEmailConfirmed,
           doForcePasswordChange: ssoUser.doForcePasswordChange,
