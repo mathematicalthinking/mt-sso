@@ -58,7 +58,7 @@ export const confirmEmail = async function(
     }
 
     ssoUser.isEmailConfirmed = true;
-    ssoUser.confirmEmailDate = Date.now();
+    ssoUser.confirmEmailDate = new Date();
 
     // keep token details on ssoUser in case they try to click link again
     // should display message saying that their email has already been confirmed
@@ -178,7 +178,9 @@ export const resendConfirmationEmail = async (
     const token = await getResetToken(20);
 
     userRec.confirmEmailToken = token;
-    userRec.confirmEmailExpires = Date.now() + CONFIRM_EMAIL_TOKEN_EXPIRY; // 1 day
+    userRec.confirmEmailExpires = new Date(
+      Date.now() + CONFIRM_EMAIL_TOKEN_EXPIRY,
+    ); // 1 day
 
     let savedUser = await userRec.save();
 
