@@ -61,7 +61,7 @@ export const forgotPassword = async function(
     }
 
     user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000;
+    user.resetPasswordExpires = new Date(Date.now() + 3600000);
 
     await user.save();
     // should we assume all users have emails?

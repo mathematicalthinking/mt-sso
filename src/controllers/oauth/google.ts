@@ -2,6 +2,7 @@
 import express from 'express';
 import axios from 'axios';
 import { isNil } from 'lodash';
+import createError from 'http-errors';
 
 import User from '../../models/User';
 import {
@@ -10,13 +11,15 @@ import {
   GoogleOauthTokenResponse,
 } from '../../types';
 import {
-  generateAPIToken,
   setSsoCookie,
   generateAccessToken,
   generateRefreshToken,
   setSsoRefreshCookie,
 } from '../../utilities/jwt';
 import { createEncUser, createVmtUser } from '../../controllers/localSignup';
+
+import EncUser from '../../models/EncUser';
+import VmtUser from '../../models/VmtUser';
 
 export const handleUserProfile = async (
   userProfile: GoogleOauthProfileResponse,
@@ -69,6 +72,11 @@ export const googleCallback = async (
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
+  let mtUser;
+  let didCreateMtUser = false;
+  let encUser;
+  let vmtUser;
+
   try {
     let { code } = req.query;
     if (code === undefined) {
@@ -101,7 +109,8 @@ export const googleCallback = async (
 
       let profile: GoogleOauthProfileResponse = profileResults.data;
 
-      let { mtUser } = await handleUserProfile(profile);
+      let mtUserResults = await handleUserProfile(profile);
+      mtUser = mtUserResults.mtUser;
       if (mtUser === null) {
         let redirectUrl = req.cookies.failureRedirectUrl;
         let error = 'oauthError=emailUnavailable';
@@ -116,17 +125,33 @@ export const googleCallback = async (
       let isNewUser = isNil(mtUser.encUserId);
 
       if (isNewUser) {
-        let apiToken = await generateAPIToken(mtUser._id);
-
-        let [encUser, vmtUser] = await Promise.all([
-          createEncUser(mtUser, {}, apiToken, 'google'),
-          createVmtUser(mtUser, {}, apiToken, 'google'),
+        [encUser, vmtUser] = await Promise.all([
+          createEncUser(mtUser, {}, 'google'),
+          createVmtUser(mtUser, {}, 'google'),
         ]);
+
+        if (encUser === null || vmtUser === null) {
+          if (encUser !== null) {
+            // vmt errored but enc was successful
+            // revert creating of enc user
+            await EncUser.findByIdAndDelete(encUser._id);
+          } else if (vmtUser !== null) {
+            await VmtUser.findByIdAndDelete(vmtUser._id);
+          }
+          // both creation processes failed
+          // just return error
+          return next(
+            new createError[500](
+              'Sorry, an unexpected error occured. Please try again.',
+            ),
+          );
+        }
 
         mtUser.encUserId = encUser._id;
         mtUser.vmtUserId = vmtUser._id;
 
         await mtUser.save();
+        didCreateMtUser = true;
       }
 
       let [accessToken, refreshToken] = await Promise.all([
@@ -142,6 +167,21 @@ export const googleCallback = async (
       res.redirect(redirectURL);
     }
   } catch (err) {
+    if (didCreateMtUser === false) {
+      // error creating sso user
+      // revert enc / vmt creation if necessary
+      if (encUser) {
+        EncUser.findByIdAndDelete(encUser._id);
+      }
+      if (vmtUser) {
+        VmtUser.findByIdAndDelete(vmtUser._id);
+      }
+      return next(
+        new createError[500](
+          'Sorry, an unexpected error occured. Please try again.',
+        ),
+      );
+    }
     next(err);
   }
 };

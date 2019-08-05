@@ -1,9 +1,8 @@
-import { FindAndModifyWriteOpResultObject } from 'mongodb';
-import { MongooseOId } from '../../types';
+import { MongooseOId, EncUserDocument, VmtUserDocument } from '../../types';
 
 export interface EncVmtUserUpdateResults {
-  updatedEncUser?: FindAndModifyWriteOpResultObject;
-  updatedVmtUser?: FindAndModifyWriteOpResultObject;
+  updatedEncUser?: EncUserDocument | null;
+  updatedVmtUser?: VmtUserDocument | null;
   wasSuccess: boolean;
 }
 export interface EncUserUpdateDetails {

@@ -25,12 +25,32 @@ export const getUserFromLogin = async (
 ): Promise<LoginResult> => {
   let user: UserDocument | null = await User.findOne({
     username,
+    isTrashed: false,
   });
 
   if (user === null) {
     return {
       errorMessage: 'Incorrect username',
       user: null,
+    };
+  }
+
+  let isGoogleUser = typeof user.googleId === 'string';
+
+  if (typeof user.password !== 'string') {
+    if (isGoogleUser) {
+      return {
+        user: null,
+        errorMessage:
+          'Account has not been set up to login via password. Try logging in with google.',
+      };
+    }
+    // user does not have a password and did not sign up with google
+    // should never happen?
+    return {
+      user: null,
+      errorMessage:
+        'Invalid account. Please contact an administrator for further information.',
     };
   }
 

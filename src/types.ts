@@ -72,22 +72,24 @@ export interface EmailTemplateHash {
 }
 
 export type UserDocument = mongoose.Document & {
+  _id: MongooseOId;
   username: string;
-  password: string;
-  encUserId?: MongooseOId;
-  vmtUserId?: MongooseOId;
+  password?: string | null;
+  encUserId?: MongooseOId | null;
+  vmtUserId?: MongooseOId | null;
   email?: string | null;
-  firstName: string;
-  lastName: string;
-  googleId?: string;
-  googleProfilePic: string;
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date | number;
-  confirmEmailToken?: string;
-  confirmEmailExpires?: Date | number;
+  firstName: string | null;
+  lastName: string | null;
+  googleId?: string | null;
+  googleProfilePic: string | null;
+  resetPasswordToken?: string | null;
+  resetPasswordExpires?: Date | null;
+  confirmEmailToken?: string | null;
+  confirmEmailExpires?: Date | null;
   isEmailConfirmed: boolean;
   doForcePasswordChange: boolean;
-  lastModifiedBy: MongooseOId;
+  lastModifiedBy: MongooseOId | null;
+  confirmEmailDate: Date | null;
   updatedAt: Date;
   createdAt: Date;
   isTrashed: boolean;
@@ -112,36 +114,63 @@ export type EmailTemplateGenerator = (
 
 export type EncUserDocument = mongoose.Document & {
   _id: MongooseOId;
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   username: string;
-  email?: string;
-  ssoId?: MongooseOId;
-  organization?: MongooseOId;
-  organizationRequest?: string;
-  location?: string;
+  email?: string | null;
+  ssoId: MongooseOId | null;
+  organization?: MongooseOId | null;
+  organizationRequest?: string | null;
+  location?: string | null;
   isAuthorized: boolean;
-  requestReason?: string;
+  requestReason?: string | null;
   accountType: string;
-  createdBy: MongooseOId;
-  authorizedBy?: MongooseOId;
+  createdBy: MongooseOId | null;
+  authorizedBy?: MongooseOId | null;
   isEmailConfirmed: boolean;
   actingRole: string;
   createDate: Date;
-  lastModifiedDate: Date;
+  lastModifiedDate: Date | null;
+  confirmEmailDate: Date | null;
+  avatar?: string | null;
+  googleId?: string | null;
+  sections: { role: string; sectionId: MongooseOId }[];
+  answers: MongooseOId[];
+  assignments: MongooseOId[];
+  collabWorkspaces: MongooseOId[];
+  hiddenWorkspaces: MongooseOId[];
+  notifications: MongooseOId[];
+  socketId?: string | null;
+  seenTour: Date | null;
+  doForcePasswordChange?: boolean;
 };
 
-export interface VmtUserDocument {
+export type VmtUserDocument = mongoose.Document & {
   _id: MongooseOId;
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   username: string;
-  email?: string;
-  ssoId?: MongooseOId;
-  accountType: string;
+  email?: string | null;
+  ssoId: MongooseOId;
+  accountType: VmtAccountType.facilitator | VmtAccountType.participant;
   createdAt: Date;
   updatedAt: Date;
-}
+  courseTemplates: MongooseOId[];
+  courses: MongooseOId[];
+  rooms: MongooseOId[];
+  activities: MongooseOId[];
+  notifications: MongooseOId[];
+  bothRoles: boolean;
+  isAdmin: boolean;
+  seenTour: boolean;
+  socketId?: string | null;
+  isTrashed: boolean;
+  ipAddress: string[];
+  latestIpAddress?: string | null;
+  isEmailConfirmed: boolean;
+  doForcePasswordChange: boolean;
+  confirmEmailDate?: Date | null;
+};
 
 export interface GoogleOauthTokenResponse {
   access_token: string;
