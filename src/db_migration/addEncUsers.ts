@@ -99,6 +99,7 @@ export const addEncUsers = async function(): Promise<void> {
           isEmailConfirmed: isEmailConfirmed,
           googleId: encUser.googleId,
           doForcePasswordChange: false,
+          confirmEmailDate: encUser.confirmEmailDate,
         });
 
         // update encompass user with new ssoId
@@ -228,6 +229,7 @@ export const createVmtCounterparts = async function(): Promise<void> {
           bothRoles: false,
           isAdmin: false,
           seenTour: false,
+          confirmEmailDate: ssoUser.confirmEmailDate,
         });
 
         // update sso user's vmtUserId

@@ -101,6 +101,7 @@ export const addVmtUsers = async function(): Promise<void> {
           resetPasswordToken: vmtUser.resetPasswordToken,
           resetPasswordExpires: vmtUser.resetPasswordExpires,
           googleId: vmtUser.googleId,
+          confirmEmailDate: vmtUser.confirmEmailDate,
         });
 
         // update vmt user with new ssoId
@@ -182,6 +183,7 @@ export const createEncCounterparts = async function(): Promise<void> {
           notifications: [],
           history: [],
           isAuthorized: true,
+          confirmEmailDate: ssoUser.confirmEmailDate,
         });
 
         // update sso user's encUserId
