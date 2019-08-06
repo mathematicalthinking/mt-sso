@@ -99,6 +99,7 @@ export const addEncUsers = async function(): Promise<void> {
           isEmailConfirmed: isEmailConfirmed,
           googleId: encUser.googleId,
           doForcePasswordChange: false,
+          confirmEmailDate: encUser.confirmEmailDate,
         });
 
         // update encompass user with new ssoId
