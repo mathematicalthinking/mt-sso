@@ -110,10 +110,19 @@ export const createVmtUser = async (
       accountType,
       isEmailConfirmed,
       rooms: requestBody.rooms,
-      _id: requestBody._id,
     };
 
-    let vmtUser = await VmtUser.create(vmtUserBody);
+    let wasFromTempUser =
+      Array.isArray(requestBody.rooms) && requestBody.rooms.length > 0;
+
+    let vmtUser;
+    if (wasFromTempUser) {
+      vmtUser = await VmtUser.findByIdAndUpdate(requestBody._id, vmtUserBody, {
+        new: true,
+      });
+    } else {
+      vmtUser = await VmtUser.create(vmtUserBody);
+    }
     return vmtUser;
   } catch (err) {
     console.log('err createVmtUser: ', err);
