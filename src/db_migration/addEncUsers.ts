@@ -229,6 +229,7 @@ export const createVmtCounterparts = async function(): Promise<void> {
           bothRoles: false,
           isAdmin: false,
           seenTour: false,
+          confirmEmailDate: ssoUser.confirmEmailDate,
         });
 
         // update sso user's vmtUserId
