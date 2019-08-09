@@ -20,6 +20,8 @@ import { createEncUser, createVmtUser } from '../../controllers/localSignup';
 
 import EncUser from '../../models/EncUser';
 import VmtUser from '../../models/VmtUser';
+import { sendEmailSMTP, sendEmailsToAdmins } from '../../utilities/emails';
+import { AppNames } from '../../config/app_urls';
 
 export const handleUserProfile = async (
   userProfile: GoogleOauthProfileResponse,
@@ -163,6 +165,39 @@ export const googleCallback = async (
       setSsoRefreshCookie(res, refreshToken);
 
       let redirectURL = req.cookies.successRedirectUrl;
+      let appName;
+      let hostUrl;
+
+      if (redirectURL.includes(process.env.ENC_URL)) {
+        appName = AppNames.Enc;
+        hostUrl = process.env.ENC_URL;
+      } else {
+        appName = AppNames.Vmt;
+        hostUrl = process.env.VMT_URL;
+      }
+      sendEmailSMTP(
+        mtUser.email || '',
+        hostUrl,
+        'googleSignup',
+        null,
+        mtUser,
+        appName,
+      );
+
+      if (process.env.NODE_ENV === 'production') {
+        sendEmailsToAdmins(hostUrl, appName, 'newUserNotification', mtUser);
+      } else {
+        sendEmailSMTP(
+          appName === AppNames.Enc
+            ? process.env.ENC_GMAIL_USERNAME
+            : process.env.VMT_GMAIL_USERNAME,
+          hostUrl,
+          'newUserNotification',
+          null,
+          mtUser,
+          appName,
+        );
+      }
 
       res.redirect(redirectURL);
     }

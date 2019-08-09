@@ -95,13 +95,14 @@ export const newUserNotification: EmailTemplateGenerator = function(
   let isVmt = appName === AppNames.Vmt;
   let appNameModifier = isVmt ? 'a' : 'an';
   let subject = `A new user has registered for ${appNameModifier} ${appName} account`;
-
+  let isGoogleUser = typeof user.googleId === 'string';
+  let registerDesc = isGoogleUser ? 'signed up via Google' : 'signed up';
   let msg;
 
   if (isVmt) {
-    msg = `A new user (username: ${username}) has registered for a ${appName} account and is now authorized. Please visit ${host}/ for further review.`;
+    msg = `A new user (username: ${username}) has ${registerDesc} for a ${appName} account and is now authorized. Please visit ${host}/ for further review.`;
   } else {
-    msg = `A new user (username: ${username}) has signed up for an ${appName} account and is waiting to be authorized. Please visit ${host}/ to login and navigate to the users portal to view users that are waiting for authorization.`;
+    msg = `A new user (username: ${username}) has ${registerDesc} for an ${appName} account and is waiting to be authorized. Please visit ${host}/ to login and navigate to the users portal to view users that are waiting for authorization.`;
   }
 
   return {
@@ -112,9 +113,33 @@ export const newUserNotification: EmailTemplateGenerator = function(
   };
 };
 
+export const googleSignup: EmailTemplateGenerator = function(
+  recipient: string,
+  host: string,
+  token: string | null,
+  user: UserDocument,
+  sender: string,
+  appName: string,
+): EmailTemplateHash {
+  let isVmt = appName === AppNames.Vmt;
+  let appNameModifier = isVmt ? 'a' : 'an';
+
+  return {
+    to: recipient,
+    from: sender,
+    subject: `You have signed up for ${appName} through google`,
+    text: `Congratulations! You have successfully signed up for ${appNameModifier} ${appName} account through your google account (${
+      user.email
+    }). This email is the username of your new account. Please visit ${host}/ to login and begin exploring the software.
+
+    If you did not sign up for ${appNameModifier} ${appName} account, please contact an administrator at ${sender}.`,
+  };
+};
+
 export default {
   resetTokenEmail,
   confirmEmailAddress,
   newlyAuthorized,
   newUserNotification,
+  googleSignup,
 };
