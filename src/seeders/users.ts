@@ -1003,7 +1003,7 @@ export default [
     createdAt: ISODate('2019-06-21T17:08:26.423Z'),
     updatedAt: ISODate('2019-06-21T17:08:26.667Z'),
     isTrashed: false,
-    isEmailConfirmed: false,
+    isEmailConfirmed: true,
     doForcePasswordChange: false,
     confirmEmailExpires: null,
     confirmEmailToken: null,

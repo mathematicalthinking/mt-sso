@@ -5,7 +5,7 @@ import { InsertWriteOpResult } from 'mongodb';
 const dbURI = `mongodb://localhost:27017/mtlogin_test`;
 
 const clearDB = async (): Promise<any> => {
-  await mongoose.connect(dbURI);
+  await mongoose.connect(dbURI, { useNewUrlParser: true });
   return mongoose.connection.db.dropDatabase();
 };
 
