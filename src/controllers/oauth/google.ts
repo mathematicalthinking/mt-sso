@@ -175,28 +175,31 @@ export const googleCallback = async (
         appName = AppNames.Vmt;
         hostUrl = process.env.VMT_URL;
       }
-      sendEmailSMTP(
-        mtUser.email || '',
-        hostUrl,
-        'googleSignup',
-        null,
-        mtUser,
-        appName,
-      );
 
-      if (process.env.NODE_ENV === 'production') {
-        sendEmailsToAdmins(hostUrl, appName, 'newUserNotification', mtUser);
-      } else {
+      if (isNewUser) {
         sendEmailSMTP(
-          appName === AppNames.Enc
-            ? process.env.ENC_GMAIL_USERNAME
-            : process.env.VMT_GMAIL_USERNAME,
+          mtUser.email || '',
           hostUrl,
-          'newUserNotification',
+          'googleSignup',
           null,
           mtUser,
           appName,
         );
+
+        if (process.env.NODE_ENV === 'production') {
+          sendEmailsToAdmins(hostUrl, appName, 'newUserNotification', mtUser);
+        } else {
+          sendEmailSMTP(
+            appName === AppNames.Enc
+              ? process.env.ENC_GMAIL_USERNAME
+              : process.env.VMT_GMAIL_USERNAME,
+            hostUrl,
+            'newUserNotification',
+            null,
+            mtUser,
+            appName,
+          );
+        }
       }
 
       res.redirect(redirectURL);
