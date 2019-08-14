@@ -184,6 +184,8 @@ export const createEncCounterparts = async function(): Promise<void> {
           history: [],
           isAuthorized: true,
           confirmEmailDate: ssoUser.confirmEmailDate,
+          actingRole:
+            vmtUser.accountType === 'participant' ? 'student' : 'teacher',
         });
 
         // update sso user's encUserId
