@@ -9,11 +9,17 @@ export default (): void => {
 
   const db = mongoose.connection;
 
-  db.on('error', console.error.bind(console, 'connection error:'));
+  db.on(
+    'error',
+    (err): void => {
+      console.trace(err);
+      throw new Error(err);
+    },
+  );
   db.once(
     'open',
     (): void => {
       console.log(`Successfully connected to ${uri}`);
-    }
+    },
   );
 };
