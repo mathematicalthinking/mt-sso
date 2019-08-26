@@ -85,6 +85,7 @@ export const encSignupRequest = Joi.object()
       then: ObjectIdHexString.required(),
       otherwise: ObjectIdHexString,
     }),
+    sections: Joi.array(),
   })
   .xor('organization', 'organizationRequest')
   .without('requestReason', 'createdBy')
