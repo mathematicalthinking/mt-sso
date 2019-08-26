@@ -25,6 +25,7 @@ import { getResetToken } from '../utilities/tokens';
 import { AppNames } from '../config/app_urls';
 import EncUser from '../models/EncUser';
 import VmtUser from '../models/VmtUser';
+import { generateEncUserAvatar } from '../utilities/ui-avatars';
 
 export const createEncUser = async (
   mtUser: any,
@@ -54,6 +55,8 @@ export const createEncUser = async (
     let accountType =
       requestBodyType === 'enc' ? requestBody.accountType : EncAccountType.T;
 
+    let avatar = generateEncUserAvatar(username, firstName, lastName);
+
     let encUserBody = {
       firstName,
       lastName,
@@ -72,6 +75,7 @@ export const createEncUser = async (
       actingRole: accountType === 'S' ? 'student' : 'teacher',
       createDate: new Date(),
       lastModifiedDate: new Date(),
+      avatar,
     };
 
     let encUser = await EncUser.create(encUserBody);
