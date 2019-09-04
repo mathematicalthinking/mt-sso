@@ -135,3 +135,7 @@ export const resetPasswordByIdRequest = Joi.object().keys({
   ssoId: ObjectIdHexString.required(),
   password: signupPassword,
 });
+
+export const confirmEmailByIdRequest = Joi.object().keys({
+  ssoId: ObjectIdHexString.required(),
+});
