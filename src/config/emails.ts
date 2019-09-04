@@ -17,4 +17,4 @@ export const getEmailAuth = function(
   return { username, password };
 };
 
-export const CONFIRM_EMAIL_TOKEN_EXPIRY = 86400000; // 1 day
+export const CONFIRM_EMAIL_TOKEN_EXPIRY = 31557600000; // 1 year
