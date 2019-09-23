@@ -9,7 +9,8 @@
     "compile": "tsc && node dist/bin/main",
     "dev": "nodemon -e ts --exec \"npm run compile\"",
     "test": "npm run seed && NODE_ENV=test npm run dev",
-    "seed": "node dist/test/seedDb"
+    "seed": "node dist/test/seedDb",
+    "test-travis": "NODE_ENV=test npm run compile && npm run seed"
   },
   "dependencies": {
     "@hapi/joi": "^15.1.0",
