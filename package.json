@@ -1,5 +1,5 @@
 {
-  "name": "mt-login",
+  "name": "mt-sso",
   "version": "0.0.0",
   "private": true,
   "scripts": {
