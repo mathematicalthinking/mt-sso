@@ -8,7 +8,7 @@ const app = express();
 
 configure(app);
 
-let port = process.env.PORT || 3002;
+let port = process.env.SSO_PORT || 3002;
 
 app.listen(
   port,

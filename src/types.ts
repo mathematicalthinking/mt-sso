@@ -33,7 +33,7 @@ declare global {
       GOOGLE_CLIENT_ID: string;
       GOOGLE_CLIENT_SECRET: string;
       GOOGLE_CALLBACK_URL: string;
-      PORT: string;
+      SSO_PORT: string;
       MT_USER_JWT_SECRET: string;
       MT_DB_URI: string;
       JWT_ISSUER_ID: string;

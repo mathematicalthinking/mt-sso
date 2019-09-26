@@ -29,10 +29,6 @@ export const generateEncUserAvatar = (
   let bgColor = generateRandomLightColor();
   let bgString = bgColor.substring(1); // first char is #
 
-  console.log({ bgColor });
-  console.log({ bgString });
-  console.log({ formattedName });
-
   let url = `https://ui-avatars.com/api/?rounded=true&color=ffffff&background=${bgString}&name=${formattedName}`;
   return url;
 };

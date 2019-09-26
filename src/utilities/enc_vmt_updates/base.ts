@@ -25,8 +25,6 @@ export const updateEncVmtUsers = async (
     let didUpdateEnc = encResults !== null;
     let didUpdateVmt = vmtResults !== null;
 
-    console.log('enc results: ', encResults);
-    console.log('vmt results', vmtResults);
     results.updatedEncUser = encResults;
     results.updatedVmtUser = vmtResults;
     results.wasSuccess = didUpdateEnc && didUpdateVmt;

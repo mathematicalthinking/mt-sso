@@ -76,9 +76,6 @@ export const confirmEmail = async function(
       updatedEncUser,
       updatedVmtUser,
     } = await confirmEncVmtEmails(encUserId, vmtUserId);
-    console.log(' WAS SUCCESS? ', wasSuccess);
-    console.log('updted enc: ', updatedEncUser);
-    console.log('updted vmt', updatedVmtUser);
 
     if (wasSuccess === false) {
       // either enc or vmt update failed

@@ -37,11 +37,11 @@ export const seed = async (collections = Object.keys(data)): Promise<void> => {
       },
     );
 
-    let results = await Promise.all(seededCollections);
+    await Promise.all(seededCollections);
 
-    console.log('Seed Results: ', results);
+    console.log('Done seeding mt-sso');
     mongoose.connection.close();
   } catch (err) {
-    console.log('Error seeding: ', err);
+    console.log('Error seeding mt-sso: ', err);
   }
 };
