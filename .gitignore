@@ -65,3 +65,5 @@ typings/
 
 # compiled ts files
 dist
+# ethereal login info created on fly each test run
+ethereal_creds.json
