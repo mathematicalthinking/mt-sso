@@ -1,9 +1,81 @@
 import * as nodemailer from 'nodemailer';
+import { propertyOf } from 'lodash';
+import fs from 'fs';
+
 import { getEmailAuth } from '../config/emails';
 import * as emailTemplates from '../constants/email_templates';
 import { EmailTemplateHash, UserDocument } from '../types';
 import { AppNames } from '../config/app_urls';
 import User from '../models/User';
+import Mail = require('nodemailer/lib/mailer');
+
+const resolveTransporter = function(
+  username?: string,
+  password?: string,
+): Promise<Mail> {
+  return new Promise(
+    (resolve, reject): void => {
+      let isTestEnv = process.env.NODE_ENV === 'test';
+
+      if (isTestEnv) {
+        nodemailer.createTestAccount(
+          (err, account): void => {
+            // create reusable transporter object using the default SMTP transport
+            if (err) {
+              reject(err);
+            } else {
+              // in case we want to look at the sent emails
+              let fileName = 'ethereal_creds.json';
+              fs.writeFile(
+                fileName,
+                JSON.stringify({
+                  user: account.user,
+                  pass: account.pass,
+                }),
+                (err): void => {
+                  if (err) {
+                    throw err;
+                  }
+                  console.log('Ethereal creds saved to ', fileName);
+                },
+              );
+
+              resolve(
+                nodemailer.createTransport({
+                  host: 'smtp.ethereal.email',
+                  port: 587,
+                  secure: false, // true for 465, false for other ports
+                  auth: {
+                    user: account.user, // generated ethereal user
+                    pass: account.pass, // generated ethereal password
+                  },
+                }),
+              );
+            }
+          },
+        );
+      } else {
+        if (typeof username !== 'string') {
+          return reject(new Error('Missing gmail username'));
+        }
+
+        if (typeof password !== 'string') {
+          return reject(new Error('Missing gmail password'));
+        }
+
+        resolve(
+          nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+              user: username,
+              pass: password,
+            },
+          }),
+        );
+      }
+    },
+  );
+};
 
 export const sendEmailSMTP = function(
   recipient: string,
@@ -17,38 +89,36 @@ export const sendEmailSMTP = function(
 
   let { username, password } = getEmailAuth(appName);
 
-  const smtpTransport = nodemailer.createTransport({
-    service: 'Gmail',
-    auth: {
-      user: username,
-      pass: password,
-    },
-  });
+  return resolveTransporter(username, password).then(
+    (smtpTransport): Promise<string> => {
+      let mailUsername: string = propertyOf(smtpTransport)('options.auth.user');
+      // eslint-disable-next-line @typescript-eslint/no-angle-bracket-type-assertion
+      const msg: EmailTemplateHash = (<any>emailTemplates)[template](
+        recipient,
+        host,
+        token,
+        userObj,
+        mailUsername,
+        appName,
+      );
 
-  // eslint-disable-next-line @typescript-eslint/no-angle-bracket-type-assertion
-  const msg: EmailTemplateHash = (<any>emailTemplates)[template](
-    recipient,
-    host,
-    token,
-    userObj,
-    username,
-    appName,
-  );
-  return new Promise(
-    (resolve, reject): void => {
-      smtpTransport.sendMail(
-        msg,
-        (err): void => {
-          if (err) {
-            let errorMsg = `Error sending email (${template}) to ${recipient} from ${username}: ${err}`;
-            console.error(errorMsg);
-            console.trace();
-            reject(errorMsg);
-          } else {
-            let msg = `Email (${template}) sent successfully to ${recipient} from ${username}`;
-            console.log('email success: ', msg);
-            resolve(msg);
-          }
+      return new Promise(
+        (resolve, reject): void => {
+          smtpTransport.sendMail(
+            msg,
+            (err): void => {
+              if (err) {
+                let errorMsg = `Error sending email (${template}) to ${recipient} from ${username}: ${err}`;
+                console.error(errorMsg);
+                console.trace();
+                reject(errorMsg);
+              } else {
+                let msg = `Email (${template}) sent successfully to ${recipient} from ${mailUsername}`;
+                console.log('email success: ', msg);
+                resolve(msg);
+              }
+            },
+          );
         },
       );
     },
