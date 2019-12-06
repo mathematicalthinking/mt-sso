@@ -30,6 +30,8 @@ const UserSchema = new Schema(
     doForcePasswordChange: { type: Boolean, default: false },
     lastModifiedBy: { type: ObjectId, ref: 'User' },
     confirmEmailDate: { type: Date },
+    isSuspended: { type: Boolean, default: false },
+    doRevokeRefreshToken: { type: Boolean, default: false }, // if set to true, on next request refresh token will be revoked
   },
   { timestamps: true },
 );

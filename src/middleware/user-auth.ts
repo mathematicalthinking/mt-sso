@@ -35,6 +35,13 @@ export const getUserFromLogin = async (
     };
   }
 
+  if (user.isSuspended) {
+    return {
+      errorMessage: 'Your account has been suspended',
+      user: null,
+    };
+  }
+
   let isGoogleUser = typeof user.googleId === 'string';
 
   if (typeof user.password !== 'string') {
@@ -177,6 +184,15 @@ export const validateRefreshToken = async (
       // get sso user from db and put on req for controller
       let user = await User.findById(verifiedToken.ssoId).lean();
       if (user === null) {
+        return next(new createError[401]());
+      }
+
+      if (user.doRevokeRefreshToken || user.isSuspended) {
+        await RevokedToken.create({ encodedToken });
+
+        if (user.doRevokeRefreshToken) {
+          User.findByIdAndUpdate(user._id, { doRevokeRefreshToken: false });
+        }
         return next(new createError[401]());
       }
       req.mt.auth.user = user;

@@ -9,7 +9,6 @@ export const prepareRedirectUrls = (
   next: NextFunction,
 ): void => {
   let { redirectURL } = req.query;
-
   let isValidRedirect = allowedDomains.includes(redirectURL);
 
   if (!isValidRedirect) {
@@ -28,7 +27,9 @@ export const prepareRedirectUrls = (
       process.env.ENC_OAUTH_FAILURE_REDIRECT_PATH
     }`;
   } else {
-    failureRedirectUrl = process.env.VMT_OAUTH_FAILURE_REDIRECT_PATH;
+    failureRedirectUrl = `${redirectURL}${
+      process.env.VMT_OAUTH_FAILURE_REDIRECT_PATH
+    }`;
   }
   req.mt.oauth.failureRedirectUrl = failureRedirectUrl;
 
