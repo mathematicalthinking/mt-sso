@@ -7,6 +7,7 @@ import signup from './signup';
 import accessToken from './accessToken';
 import confirmEmail from './confirmEmail';
 import user from './user';
+import revokedToken from './revokedToken';
 
 const router = express.Router();
 
@@ -17,5 +18,6 @@ router.use('/reset', reset);
 router.use('/accessToken', accessToken);
 router.use('/confirmEmail', confirmEmail);
 router.use('/user', user);
+router.use('/revokedToken', revokedToken);
 
 export default router;

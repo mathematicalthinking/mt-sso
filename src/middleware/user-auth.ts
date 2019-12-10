@@ -188,11 +188,8 @@ export const validateRefreshToken = async (
       }
 
       if (user.doRevokeRefreshToken || user.isSuspended) {
-        await RevokedToken.create({ encodedToken });
+        await RevokedToken.create({ encodedToken, user: user._id });
 
-        if (user.doRevokeRefreshToken) {
-          User.findByIdAndUpdate(user._id, { doRevokeRefreshToken: false });
-        }
         return next(new createError[401]());
       }
       req.mt.auth.user = user;
