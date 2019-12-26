@@ -90,6 +90,8 @@ export type UserDocument = mongoose.Document & {
   doForcePasswordChange: boolean;
   lastModifiedBy: MongooseOId | null;
   confirmEmailDate: Date | null;
+  isSuspended: boolean;
+  doRevokeRefreshToken: boolean;
   updatedAt: Date;
   createdAt: Date;
   isTrashed: boolean;
@@ -170,6 +172,8 @@ export type VmtUserDocument = mongoose.Document & {
   isEmailConfirmed: boolean;
   doForcePasswordChange: boolean;
   confirmEmailDate?: Date | null;
+  doForceLogout: boolean;
+  isSuspended: boolean;
 };
 
 export interface GoogleOauthTokenResponse {
@@ -266,6 +270,7 @@ export interface GoogleSignupResponse {
 
 export type RevokedTokenDocument = mongoose.Document & {
   encodedToken: string;
+  user: MongooseOId;
 };
 
 export interface VerifiedApiToken {

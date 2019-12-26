@@ -9,12 +9,16 @@ export const createNewAccessToken = async (
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
-  let user = getUser(req);
-  if (user === undefined) {
-    return next(new createError[401]());
+  try {
+    let user = getUser(req);
+    if (user === undefined) {
+      return next(new createError[401]());
+    }
+    let accessToken = await generateAccessToken(user);
+    res.json({
+      accessToken,
+    });
+  } catch (err) {
+    next(err);
   }
-  let accessToken = await generateAccessToken(user);
-  res.json({
-    accessToken,
-  });
 };

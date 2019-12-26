@@ -156,6 +156,12 @@ export const googleCallback = async (
         didCreateMtUser = true;
       }
 
+      if (mtUser.isSuspended) {
+        let redirectUrl = req.cookies.failureRedirectUrl;
+        let error = 'oauthError=userSuspended';
+        res.redirect(`${redirectUrl}?${error}`);
+        return;
+      }
       let [accessToken, refreshToken] = await Promise.all([
         generateAccessToken(mtUser),
         generateRefreshToken(mtUser),

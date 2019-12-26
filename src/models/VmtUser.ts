@@ -35,6 +35,8 @@ const VmtUser = new Schema(
     isEmailConfirmed: { type: Boolean, default: false },
     doForcePasswordChange: { type: Boolean, default: false },
     confirmEmailDate: { type: Date },
+    isSuspended: { type: Boolean, default: false },
+    doForceLogout: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
