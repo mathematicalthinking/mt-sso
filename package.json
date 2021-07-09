@@ -8,7 +8,8 @@
     "compile:watch": "tsc --watch",
     "compile": "tsc && node dist/bin/main",
     "dev": "nodemon -e ts --exec \"npm run compile\"",
-    "test": "npm run seed && NODE_ENV=test npm run dev",
+    "test": "npm run seed && NODE_ENV=test npm run compile",
+    "test:pc": "\"SET NODE_ENV=test\"&& npm run seed && npm run compile",
     "seed": "node dist/test/seedDb",
     "test-travis": "NODE_ENV=test npm run compile && npm run seed"
   },
