@@ -98,13 +98,14 @@ export const vmtSignupRequest = Joi.object().keys({
   lastName: vmtLastName,
   username: signupUsername,
   password: signupPassword,
-  email: email.required(),
+  email: email,
   accountType: Joi.string()
     .required()
     .trim()
     .lowercase()
     .valid(Object.keys(VmtAccountType)),
   rooms: Joi.array(),
+  courses: Joi.array(),
   _id: ObjectIdHexString,
 });
 

@@ -127,9 +127,11 @@ export const googleCallback = async (
       let isNewUser = isNil(mtUser.encUserId);
 
       if (isNewUser) {
+        const vmtUserData = await VmtUser.findOne({ email: mtUser.email });
+
         [encUser, vmtUser] = await Promise.all([
           createEncUser(mtUser, {}, 'google'),
-          createVmtUser(mtUser, {}, 'google'),
+          createVmtUser(mtUser, vmtUserData || {}, 'google'),
         ]);
 
         if (encUser === null || vmtUser === null) {
