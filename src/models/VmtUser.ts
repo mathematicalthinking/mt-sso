@@ -30,6 +30,9 @@ const VmtUser = new Schema(
     tokenExpiryDate: { type: Date }, // // For Authentication Encompass users
     isTrashed: { type: Boolean, default: false },
     ssoId: { type: ObjectId },
+    isGmail: { type: Boolean, default: false },
+    sponsor: { type: ObjectId, ref: 'User' },
+    organization: { type: String },
     ipAddresses: [{ type: String }],
     latestIpAddress: { type: String },
     isEmailConfirmed: { type: Boolean, default: false },
