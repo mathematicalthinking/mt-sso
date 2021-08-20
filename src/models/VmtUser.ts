@@ -21,7 +21,10 @@ const VmtUser = new Schema(
     lastName: { type: String },
     username: { type: String, required: true },
     email: { type: String },
-    accountType: { type: String, enum: ['participant', 'facilitator', 'temp'] },
+    accountType: {
+      type: String,
+      enum: ['participant', 'facilitator', 'temp', 'pending'],
+    },
     bothRoles: { type: Boolean, default: false },
     isAdmin: { type: Boolean, default: false },
     seenTour: { type: Boolean, default: false },
@@ -30,6 +33,9 @@ const VmtUser = new Schema(
     tokenExpiryDate: { type: Date }, // // For Authentication Encompass users
     isTrashed: { type: Boolean, default: false },
     ssoId: { type: ObjectId },
+    isGmail: { type: Boolean, default: false },
+    sponsor: { type: ObjectId, ref: 'User' },
+    organization: { type: String },
     ipAddresses: [{ type: String }],
     latestIpAddress: { type: String },
     isEmailConfirmed: { type: Boolean, default: false },
