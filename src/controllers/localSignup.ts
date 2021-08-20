@@ -121,7 +121,12 @@ export const createVmtUser = async (
       (Array.isArray(requestBody.rooms) && requestBody.rooms.length > 0) ||
       (Array.isArray(requestBody.courses) && requestBody.courses.length > 0);
     let vmtUser;
-
+    if (Array.isArray(requestBody.courses) && requestBody.courses.length > 0) {
+      vmtUserBody = {
+        ...vmtUserBody,
+        isEmailConfirmed: true,
+      };
+    }
     if (wasFromTempUser) {
       vmtUser = await VmtUser.findByIdAndUpdate(requestBody._id, vmtUserBody, {
         new: true,
