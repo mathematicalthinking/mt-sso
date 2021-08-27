@@ -105,6 +105,10 @@ export const createVmtUser = async (
         ? requestBody.accountType
         : VmtAccountType.facilitator;
 
+    if (requestBodyType === 'google' && requestBody.username) {
+      username = requestBody.username;
+    }
+
     let vmtUserBody = {
       firstName,
       lastName,

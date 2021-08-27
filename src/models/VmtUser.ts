@@ -35,7 +35,7 @@ const VmtUser = new Schema(
     ssoId: { type: ObjectId },
     isGmail: { type: Boolean, default: false },
     sponsor: { type: ObjectId, ref: 'User' },
-    organization: { type: String },
+    metadata: { type: Object },
     ipAddresses: [{ type: String }],
     latestIpAddress: { type: String },
     isEmailConfirmed: { type: Boolean, default: false },
