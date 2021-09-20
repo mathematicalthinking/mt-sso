@@ -36,6 +36,11 @@ declare global {
       SSO_PORT: string;
       MT_USER_JWT_SECRET: string;
       MT_DB_URI: string;
+      MT_STAGE_URI: string;
+      MT_STAGE_DB_USER: string;
+      MT_STAGE_DB_PASS: string;
+      MT_STAGE_DB_AUTHDB: string;
+      MT_STAGE_DB_SSL_KEY_DIR: string;
       JWT_ISSUER_ID: string;
       ENC_URL: string;
       ENC_PATH_TO_MODELS: string;
