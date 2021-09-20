@@ -5,7 +5,15 @@ export default (): void => {
   if (typeof uri !== 'string') {
     return;
   }
-  mongoose.connect(uri, { useNewUrlParser: true });
+  const mongoOptions = {
+    ssl: true,
+    sslValidate: true,
+    user: process.env.MT_DB_USER,
+    pass: process.env.MT_DB_PASS,
+    useNewUrlParser: true,
+  };
+
+  mongoose.connect(uri, mongoOptions);
 
   const db = mongoose.connection;
 

@@ -5,7 +5,14 @@ export const connect = function connectToDb(
 ): Promise<mongoose.Connection> {
   return new Promise(
     (resolve, reject): void => {
-      const db = mongoose.createConnection(url, { useNewUrlParser: true });
+      const mongoOptions = {
+        ssl: true,
+        sslValidate: true,
+        user: process.env.MT_DB_USER,
+        pass: process.env.MT_DB_PASS,
+        useNewUrlParser: true,
+      };
+      const db = mongoose.createConnection(url, mongoOptions);
 
       db.on(
         'error',
