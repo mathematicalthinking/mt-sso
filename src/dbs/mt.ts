@@ -17,6 +17,7 @@ export default (): void => {
       user: process.env.MT_STAGE_DB_USER,
       pass: process.env.MT_STAGE_DB_PASS,
       sslKey: fs.readFileSync(process.env.MT_STAGE_DB_SSL_KEY_DIR),
+      sslCert: fs.readFileSync(process.env.MT_STAGE_DB_SSL_CERT_DIR),
       authSource: process.env.MT_STAGE_DB_AUTHDB,
       useNewUrlParser: true,
     };

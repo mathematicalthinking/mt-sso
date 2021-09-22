@@ -1,8 +1,31 @@
 import { Schema, createConnection } from 'mongoose';
 import { VmtUserDocument } from '../types';
+const fs = require('fs');
 
 const ObjectId = Schema.Types.ObjectId;
-const vmtDb = createConnection(process.env.VMT_DB_URI);
+let uri =
+  process.env.NODE_ENV === 'staging'
+    ? process.env.VMT_STAGE_URI
+    : process.env.VMT_DB_URI;
+
+let mongoOptions = {};
+if (process.env.NODE_ENV === 'staging') {
+  mongoOptions = {
+    ssl: true,
+    sslValidate: true,
+    user: process.env.VMT_STAGE_DB_USER,
+    pass: process.env.VMT_STAGE_DB_PASS,
+    sslKey: fs.readFileSync(process.env.VMT_STAGE_DB_SSL_KEY_DIR),
+    sslCert: fs.readFileSync(process.env.VMT_STAGE_DB_SSL_CERT_DIR),
+    authSource: process.env.VMT_STAGE_DB_AUTHDB,
+    useNewUrlParser: true,
+  };
+} else {
+  mongoOptions = {
+    useNewUrlParser: true,
+  };
+}
+const vmtDb = createConnection(uri, mongoOptions);
 
 const VmtUser = new Schema(
   {

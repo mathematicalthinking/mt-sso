@@ -2,6 +2,7 @@ import * as express from 'express';
 
 export const sendError = {
   InternalError: function(err: string | null, res: express.Response): void {
+    console.log('Internal Error: ', err, ', Response: ', res);
     res.status(500).json({
       errorMessage: err || 'Internal Error',
     });
@@ -18,7 +19,7 @@ export const sendError = {
   },
   NotAuthorizedError: function(
     err: string | null,
-    res: express.Response
+    res: express.Response,
   ): void {
     res.status(403).json({
       errorMessage: err || 'Not Authorized',
@@ -26,7 +27,7 @@ export const sendError = {
   },
   InvalidCredentialsError: function(
     err: string | null,
-    res: express.Response
+    res: express.Response,
   ): void {
     res.status(401).json({
       errorMessage: err || 'Unauthorized',
@@ -34,7 +35,7 @@ export const sendError = {
   },
   InvalidArgumentError: function(
     err: string | null,
-    res: express.Response
+    res: express.Response,
   ): void {
     res.status(409).json({
       errorMessage: err || 'Invalid Argument',
@@ -42,7 +43,7 @@ export const sendError = {
   },
   InvalidContentError: function(
     err: string | null,
-    res: express.Response
+    res: express.Response,
   ): void {
     res.status(400).json({
       errorMessage: err || 'Invalid Content',
