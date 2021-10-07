@@ -20,7 +20,7 @@ export const signupPassword = trimmed
   .min(10)
   .max(72);
 
-export const email = trimmed.regex(emailPattern);
+export const email = trimmed.regex(emailPattern).lowercase();
 export const encEmail = Joi.when('accountType', {
   is: EncAccountType.S,
   then: email,

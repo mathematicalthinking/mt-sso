@@ -121,16 +121,20 @@ export const createVmtUser = async (
       courses: requestBody.courses,
     };
 
+    // temp or imported user, preexisting data
     let wasFromTempUser =
       (Array.isArray(requestBody.rooms) && requestBody.rooms.length > 0) ||
       (Array.isArray(requestBody.courses) && requestBody.courses.length > 0);
-    let vmtUser;
+    // catch an imported proxy course user and confirm email, as it may not exist
     if (Array.isArray(requestBody.courses) && requestBody.courses.length > 0) {
       vmtUserBody = {
         ...vmtUserBody,
         isEmailConfirmed: true,
       };
     }
+
+    let vmtUser;
+    // For any user with prior data, find and update that VMT user with mt login data
     if (wasFromTempUser) {
       vmtUser = await VmtUser.findByIdAndUpdate(requestBody._id, vmtUserBody, {
         new: true,

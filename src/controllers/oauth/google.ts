@@ -127,6 +127,7 @@ export const googleCallback = async (
       let isNewUser = isNil(mtUser.encUserId);
 
       if (isNewUser) {
+        // check to see if the email is pre-loaded to VMT with user-data
         const vmtUserData = await VmtUser.findOne({ email: mtUser.email });
 
         [encUser, vmtUser] = await Promise.all([

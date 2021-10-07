@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { version } from '../constants/version';
 
 export default (): void => {
   let uri = process.env.MT_DB_URI;
@@ -20,6 +21,7 @@ export default (): void => {
     'open',
     (): void => {
       console.log(`Successfully connected to ${uri}`);
+      console.log(`MT-SSO version v.${version}`);
     },
   );
 };
