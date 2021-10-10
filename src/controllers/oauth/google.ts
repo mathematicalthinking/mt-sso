@@ -126,34 +126,42 @@ export const googleCallback = async (
 
       let isNewUser = isNil(mtUser.encUserId);
 
-      // catch if pending user data was not added
-      // find VMT user with data
-      const vmtPendingData = await VmtUser.findOne(
-        { email: mtUser.email },
-        { accountType: 'pending' },
-      );
-      // find duplicate VMT user to remove
-      const vmtMTdata = await VmtUser.findOne(
-        { email: mtUser.email },
-        { ssoId: mtUser._id },
-      );
-      if (vmtPendingData && vmtMTdata) {
-        // Swap linked Ids to link sso account with VMT account with data
-        await VmtUser.findByIdAndUpdate(vmtPendingData._id, {
-          ssoId: mtUser._id,
-          accountType: 'facilitator',
-        });
-        mtUser.vmtUserId = vmtPendingData._id;
-        await mtUser.save();
+      // catch if pending user data was not added to existing VMT user
+      // Matches for VMT user with same email and 'pending' accountType
+      // env toggle to enable feature
+      if (
+        process.env.VMT_YES_TO_CONVT_PENDING === 'yes' ||
+        process.env.VMT_YES_TO_CONVT_PENDING === 'Yes' ||
+        process.env.VMT_YES_TO_CONVT_PENDING === 'YES'
+      ) {
+        // find VMT user with data
+        const vmtPendingData = await VmtUser.findOne(
+          { email: mtUser.email },
+          { accountType: 'pending' },
+        );
+        // find duplicate VMT user to remove
+        const vmtMTdata = await VmtUser.findOne(
+          { email: mtUser.email },
+          { ssoId: mtUser._id },
+        );
+        if (vmtPendingData && vmtMTdata) {
+          // Swap linked Ids to link sso account with VMT account with data
+          await VmtUser.findByIdAndUpdate(vmtPendingData._id, {
+            ssoId: mtUser._id,
+            accountType: 'facilitator',
+          });
+          mtUser.vmtUserId = vmtPendingData._id;
+          await mtUser.save();
 
-        // invalidate or delete duplicate record
-        await VmtUser.findByIdAndUpdate(vmtMTdata._id, {
-          isTrashed: true,
-          accountType: 'temp',
-          email: '',
-        });
-        // await VmtUser.findByIdAndUpdate(vmtMTdata._id, { ssoId: '' });
-        // await VmtUser.findByIdAndDelete(vmtMTdata._id);
+          // invalidate or delete duplicate record
+          await VmtUser.findByIdAndUpdate(vmtMTdata._id, {
+            isTrashed: true,
+            accountType: 'temp',
+            email: '',
+          });
+          // await VmtUser.findByIdAndUpdate(vmtMTdata._id, { ssoId: '' });
+          // await VmtUser.findByIdAndDelete(vmtMTdata._id);
+        }
       }
 
       if (isNewUser) {
