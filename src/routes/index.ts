@@ -8,7 +8,7 @@ router.get('/', function(
   res: express.Response,
   next: express.NextFunction,
 ): void {
-  console.log(`MT-SSO v.${version}, redirecting...`);
+  console.log(`MT-SSO v.${version}, redirecting client...`);
   res.redirect(process.env.DEFAULT_REDIRECT_URL);
 });
 
