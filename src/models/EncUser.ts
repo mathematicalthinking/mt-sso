@@ -1,8 +1,31 @@
 import { Schema, createConnection } from 'mongoose';
 import { EncUserDocument } from '../types';
+const fs = require('fs');
 
 const ObjectId = Schema.Types.ObjectId;
-const encDb = createConnection(process.env.ENC_DB_URI);
+let uri =
+  process.env.NODE_ENV === 'production'
+    ? process.env.ENC_PROD_URI
+    : process.env.ENC_DB_URI;
+
+let mongoOptions = {};
+if (process.env.NODE_ENV === 'production') {
+  mongoOptions = {
+    ssl: true,
+    sslValidate: true,
+    user: process.env.ENC_PROD_DB_USER,
+    pass: process.env.ENC_PROD_DB_PASS,
+    sslKey: fs.readFileSync(process.env.ENC_PROD_DB_SSL_KEY_DIR),
+    sslCert: fs.readFileSync(process.env.ENC_PROD_DB_SSL_CERT_DIR),
+    authSource: process.env.ENC_PROD_DB_AUTHDB,
+    useNewUrlParser: true,
+  };
+} else {
+  mongoOptions = {
+    useNewUrlParser: true,
+  };
+}
+const encDb = createConnection(uri, mongoOptions);
 /**
  * @public
  * @class Log

@@ -36,6 +36,12 @@ declare global {
       SSO_PORT: string;
       MT_USER_JWT_SECRET: string;
       MT_DB_URI: string;
+      MT_PROD_URI: string;
+      MT_PROD_DB_USER: string;
+      MT_PROD_DB_PASS: string;
+      MT_PROD_DB_AUTHDB: string;
+      MT_PROD_DB_SSL_KEY_DIR: string;
+      MT_PROD_DB_SSL_CERT_DIR: string;
       JWT_ISSUER_ID: string;
       ENC_URL: string;
       ENC_PATH_TO_MODELS: string;
@@ -53,6 +59,18 @@ declare global {
       VMT_OAUTH_SUCCESS_REDIRECT_PATH: string;
       ENC_DB_URI: string;
       VMT_DB_URI: string;
+      VMT_PROD_URI: string;
+      VMT_PROD_DB_USER: string;
+      VMT_PROD_DB_PASS: string;
+      VMT_PROD_DB_SSL_KEY_DIR: string;
+      VMT_PROD_DB_SSL_CERT_DIR: string;
+      VMT_PROD_DB_AUTHDB: string;
+      ENC_PROD_URI: string;
+      ENC_PROD_DB_USER: string;
+      ENC_PROD_DB_PASS: string;
+      ENC_PROD_DB_SSL_KEY_DIR: string;
+      ENC_PROD_DB_SSL_CERT_DIR: string;
+      ENC_PROD_DB_AUTHDB: string;
     }
   }
 }

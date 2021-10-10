@@ -81,9 +81,9 @@ const configure = (app: express.Application): void => {
     // render the error page
     res.status(err.status || 500);
     console.log(
-      `SSO error handler: Status: ${err.status}; MEssage: ${err.message}`,
+      `SSO error handler: Status: ${err.status}; Message: ${err.message}`,
     );
-    let message = err.message || 'Internal Server Error';
+    let message = err.message || `Internal Server Error: ${err}`;
     res.json(message);
     // res.render('error');
   });
