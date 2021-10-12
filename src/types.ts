@@ -42,6 +42,12 @@ declare global {
       MT_PROD_DB_AUTHDB: string;
       MT_PROD_DB_SSL_KEY_DIR: string;
       MT_PROD_DB_SSL_CERT_DIR: string;
+      MT_STAGE_URI: string;
+      MT_STAGE_DB_USER: string;
+      MT_STAGE_DB_PASS: string;
+      MT_STAGE_DB_AUTHDB: string;
+      MT_STAGE_DB_SSL_KEY_DIR: string;
+      MT_STAGE_DB_SSL_CERT_DIR: string;
       JWT_ISSUER_ID: string;
       ENC_URL: string;
       ENC_PATH_TO_MODELS: string;
@@ -71,6 +77,18 @@ declare global {
       ENC_PROD_DB_SSL_KEY_DIR: string;
       ENC_PROD_DB_SSL_CERT_DIR: string;
       ENC_PROD_DB_AUTHDB: string;
+      VMT_STAGE_URI: string;
+      VMT_STAGE_DB_USER: string;
+      VMT_STAGE_DB_PASS: string;
+      VMT_STAGE_DB_SSL_KEY_DIR: string;
+      VMT_STAGE_DB_SSL_CERT_DIR: string;
+      VMT_STAGE_DB_AUTHDB: string;
+      ENC_STAGE_URI: string;
+      ENC_STAGE_DB_USER: string;
+      ENC_STAGE_DB_PASS: string;
+      ENC_STAGE_DB_SSL_KEY_DIR: string;
+      ENC_STAGE_DB_SSL_CERT_DIR: string;
+      ENC_STAGE_DB_AUTHDB: string;
     }
   }
 }

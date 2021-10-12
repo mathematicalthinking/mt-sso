@@ -3,15 +3,13 @@ import { version } from '../constants/version';
 const fs = require('fs');
 
 export default (): void => {
-  let uri =
-    process.env.NODE_ENV === 'production'
-      ? process.env.MT_PROD_URI
-      : process.env.MT_DB_URI;
+  let uri = process.env.MT_DB_URI;
   if (typeof uri !== 'string') {
     return;
   }
   let mongoOptions = {};
   if (process.env.NODE_ENV === 'production') {
+    uri = process.env.MT_PROD_URI;
     mongoOptions = {
       ssl: true,
       sslValidate: true,
@@ -20,6 +18,18 @@ export default (): void => {
       sslKey: fs.readFileSync(process.env.MT_PROD_DB_SSL_KEY_DIR),
       sslCert: fs.readFileSync(process.env.MT_PROD_DB_SSL_CERT_DIR),
       authSource: process.env.MT_PROD_DB_AUTHDB,
+      useNewUrlParser: true,
+    };
+  } else if (process.env.NODE_ENV === 'staging') {
+    uri = process.env.MT_STAGE_URI;
+    mongoOptions = {
+      ssl: true,
+      sslValidate: true,
+      user: process.env.MT_STAGE_DB_USER,
+      pass: process.env.MT_STAGE_DB_PASS,
+      sslKey: fs.readFileSync(process.env.MT_STAGE_DB_SSL_KEY_DIR),
+      sslCert: fs.readFileSync(process.env.MT_STAGE_DB_SSL_CERT_DIR),
+      authSource: process.env.MT_STAGE_DB_AUTHDB,
       useNewUrlParser: true,
     };
   } else {
