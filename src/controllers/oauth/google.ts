@@ -130,21 +130,24 @@ export const googleCallback = async (
       // Matches for VMT user with same email and 'pending' accountType
       // env toggle to enable feature
       if (
-        process.env.VMT_YES_TO_CONVT_PENDING === 'yes' ||
-        process.env.VMT_YES_TO_CONVT_PENDING === 'Yes' ||
-        process.env.VMT_YES_TO_CONVT_PENDING === 'YES'
+        process.env.VMT_YES_TO_CONVT_PENDING &&
+        process.env.VMT_YES_TO_CONVT_PENDING.toLowerCase() === 'yes'
       ) {
         // find VMT user with data
-        const vmtPendingData = await VmtUser.findOne(
-          { email: mtUser.email },
-          { accountType: 'pending' },
-        );
+        const vmtPendingData = await VmtUser.findOne({
+          email: mtUser.email,
+          accountType: 'pending',
+        });
         // find duplicate VMT user to remove
-        const vmtMTdata = await VmtUser.findOne(
-          { email: mtUser.email },
-          { ssoId: mtUser._id },
-        );
-        if (vmtPendingData && vmtMTdata) {
+        const vmtMTdata = await VmtUser.findOne({
+          email: mtUser.email,
+          ssoId: mtUser._id,
+        });
+        if (
+          vmtPendingData &&
+          vmtPendingData.accountType === 'pending' &&
+          vmtMTdata
+        ) {
           // Swap linked Ids to link sso account with VMT account with data
           await VmtUser.findByIdAndUpdate(vmtPendingData._id, {
             ssoId: mtUser._id,

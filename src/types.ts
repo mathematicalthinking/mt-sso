@@ -190,7 +190,10 @@ export type VmtUserDocument = mongoose.Document & {
   username: string;
   email?: string | null;
   ssoId: MongooseOId;
-  accountType: VmtAccountType.facilitator | VmtAccountType.participant;
+  accountType:
+    | VmtAccountType.facilitator
+    | VmtAccountType.participant
+    | VmtAccountType.pending;
   createdAt: Date;
   updatedAt: Date;
   courseTemplates: MongooseOId[];
@@ -230,6 +233,7 @@ export interface GoogleOauthProfileResponse {
 export enum VmtAccountType {
   participant = 'particpant',
   facilitator = 'facilitator',
+  pending = 'pending',
 }
 
 export enum EncAccountType {
