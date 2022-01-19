@@ -146,7 +146,10 @@ net:
 
 ### Setup To Do
 1. Database load or generated testing database
+    download mtlogin_stage_db_2021_05_10.gz from VmtEncompass folder
+    mongo restore command
 2. User email and password to log in at
+	username from mtlogin_stage_db_2021_05_10.gz database
 
 
 
