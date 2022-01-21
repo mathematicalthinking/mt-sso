@@ -49,7 +49,8 @@ Note: these procedures work for an M1 Mac running Monterey.  Please update this 
   
     xcode-select --install
     brew install mongodb-community@4.4
-    ln -s /opt/homebrew/Cellar/mongodb-community@4.4/4.4.10/bin/mongod /opt/homebrew/bin/mongod 
+    ln -s /opt/homebrew/Cellar/mongodb-community@4.4/4.4.11/bin/mongod /opt/homebrew/bin/mongod 
+    # (Take note to run a seperate window for debugging purposes below)
     mongod --config /opt/homebrew/etc/mongod.conf
     mongosh
 
