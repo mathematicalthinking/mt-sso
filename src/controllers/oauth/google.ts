@@ -126,10 +126,57 @@ export const googleCallback = async (
 
       let isNewUser = isNil(mtUser.encUserId);
 
+      if (!isNewUser) {
+        // catch if pending user data was not added to existing VMT user
+        // Matches for VMT user with same email and 'pending' accountType
+        // env toggle to enable feature
+        if (
+          process.env.VMT_YES_TO_CONVT_PENDING &&
+          process.env.VMT_YES_TO_CONVT_PENDING.toLowerCase() === 'yes'
+        ) {
+          // find VMT user with data
+          const vmtPendingData = await VmtUser.findOne({
+            email: mtUser.email,
+            accountType: 'pending',
+          });
+          // find duplicate VMT user to remove
+          const vmtMTdata = await VmtUser.findOne({
+            email: mtUser.email,
+            ssoId: mtUser._id,
+          });
+          if (
+            vmtPendingData &&
+            vmtPendingData.accountType === 'pending' &&
+            vmtMTdata
+          ) {
+            // Swap linked Ids to link sso account with VMT account with data
+            await VmtUser.findByIdAndUpdate(vmtPendingData._id, {
+              ssoId: mtUser._id,
+              accountType: 'facilitator',
+              isEmailConfirmed: true,
+            });
+            mtUser.vmtUserId = vmtPendingData._id;
+            await mtUser.save();
+
+            // invalidate or delete duplicate record
+            await VmtUser.findByIdAndUpdate(vmtMTdata._id, {
+              isTrashed: true,
+              accountType: 'temp',
+              email: '',
+            });
+            // await VmtUser.findByIdAndUpdate(vmtMTdata._id, { ssoId: '' });
+            // await VmtUser.findByIdAndDelete(vmtMTdata._id);
+          }
+        }
+      }
+
       if (isNewUser) {
+        // check to see if the email is pre-loaded to VMT with user-data
+        const vmtUserData = await VmtUser.findOne({ email: mtUser.email });
+
         [encUser, vmtUser] = await Promise.all([
           createEncUser(mtUser, {}, 'google'),
-          createVmtUser(mtUser, {}, 'google'),
+          createVmtUser(mtUser, vmtUserData || {}, 'google'),
         ]);
 
         if (encUser === null || vmtUser === null) {

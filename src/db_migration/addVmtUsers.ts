@@ -206,7 +206,8 @@ export const createEncCounterparts = async function(): Promise<void> {
     encDb.close();
   } catch (err) {
     console.log('ERRR', err);
-    throw new Error(err.message);
+    const { message } = err as Error;
+    throw new Error(message);
   }
 };
 

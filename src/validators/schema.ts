@@ -20,7 +20,7 @@ export const signupPassword = trimmed
   .min(10)
   .max(72);
 
-export const email = trimmed.regex(emailPattern);
+export const email = trimmed.regex(emailPattern).lowercase();
 export const encEmail = Joi.when('accountType', {
   is: EncAccountType.S,
   then: email,
@@ -98,13 +98,14 @@ export const vmtSignupRequest = Joi.object().keys({
   lastName: vmtLastName,
   username: signupUsername,
   password: signupPassword,
-  email: email.required(),
+  email: email,
   accountType: Joi.string()
     .required()
     .trim()
     .lowercase()
     .valid(Object.keys(VmtAccountType)),
   rooms: Joi.array(),
+  courses: Joi.array(),
   _id: ObjectIdHexString,
 });
 

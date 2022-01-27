@@ -1,8 +1,41 @@
 import { Schema, createConnection } from 'mongoose';
 import { VmtUserDocument } from '../types';
+const fs = require('fs');
 
 const ObjectId = Schema.Types.ObjectId;
-const vmtDb = createConnection(process.env.VMT_DB_URI);
+let uri = process.env.VMT_DB_URI;
+
+let mongoOptions = {};
+if (process.env.NODE_ENV === 'production') {
+  uri = process.env.VMT_PROD_URI;
+  mongoOptions = {
+    ssl: true,
+    sslValidate: true,
+    user: process.env.VMT_PROD_DB_USER,
+    pass: process.env.VMT_PROD_DB_PASS,
+    sslKey: fs.readFileSync(process.env.VMT_PROD_DB_SSL_KEY_DIR),
+    sslCert: fs.readFileSync(process.env.VMT_PROD_DB_SSL_CERT_DIR),
+    authSource: process.env.VMT_PROD_DB_AUTHDB,
+    useNewUrlParser: true,
+  };
+} else if (process.env.NODE_ENV === 'staging') {
+  uri = process.env.VMT_STAGE_URI;
+  mongoOptions = {
+    ssl: true,
+    sslValidate: true,
+    user: process.env.VMT_STAGE_DB_USER,
+    pass: process.env.VMT_STAGE_DB_PASS,
+    sslKey: fs.readFileSync(process.env.VMT_STAGE_DB_SSL_KEY_DIR),
+    sslCert: fs.readFileSync(process.env.VMT_STAGE_DB_SSL_CERT_DIR),
+    authSource: process.env.VMT_STAGE_DB_AUTHDB,
+    useNewUrlParser: true,
+  };
+} else {
+  mongoOptions = {
+    useNewUrlParser: true,
+  };
+}
+const vmtDb = createConnection(uri, mongoOptions);
 
 const VmtUser = new Schema(
   {
@@ -21,7 +54,10 @@ const VmtUser = new Schema(
     lastName: { type: String },
     username: { type: String, required: true },
     email: { type: String },
-    accountType: { type: String, enum: ['participant', 'facilitator', 'temp'] },
+    accountType: {
+      type: String,
+      enum: ['participant', 'facilitator', 'temp', 'pending'],
+    },
     bothRoles: { type: Boolean, default: false },
     isAdmin: { type: Boolean, default: false },
     seenTour: { type: Boolean, default: false },
@@ -30,6 +66,9 @@ const VmtUser = new Schema(
     tokenExpiryDate: { type: Date }, // // For Authentication Encompass users
     isTrashed: { type: Boolean, default: false },
     ssoId: { type: ObjectId },
+    isGmail: { type: Boolean, default: false },
+    sponsor: { type: ObjectId, ref: 'User' },
+    metadata: { type: Object },
     ipAddresses: [{ type: String }],
     latestIpAddress: { type: String },
     isEmailConfirmed: { type: Boolean, default: false },
