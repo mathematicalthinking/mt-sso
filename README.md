@@ -15,7 +15,7 @@ Note: these procedures work for an M1 Mac running Monterey.  Please update this 
     echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
     eval "$(/opt/homebrew/bin/brew shellenv)"
   Note: this will install command line tools for xcode if needed
-  
+
 ### Install Git
 
 [Git](https://git-scm.com/)
@@ -24,7 +24,7 @@ Note: these procedures work for an M1 Mac running Monterey.  Please update this 
     brew install git-gui
     git config --global user.name "<your name here>"
     git config --global user.email <your.email@here>
-    
+
 ### Install NVM (Node Version Manager):
 
 [NVM Readme.md](https://github.com/nvm-sh/nvm)
@@ -46,10 +46,10 @@ Note: these procedures work for an M1 Mac running Monterey.  Please update this 
 
 #### Install Mongodb Community Edition (M1 Mac)
   [Mongo Install on Mac](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/)
-  
+
     xcode-select --install
     brew install mongodb-community@4.4
-    ln -s /opt/homebrew/Cellar/mongodb-community@4.4/4.4.11/bin/mongod /opt/homebrew/bin/mongod 
+    ln -s /opt/homebrew/Cellar/mongodb-community@4.4/4.4.11/bin/mongod /opt/homebrew/bin/mongod
     # (Take note to run a seperate window for debugging purposes below)
     mongod --config /opt/homebrew/etc/mongod.conf
     mongosh
@@ -79,17 +79,17 @@ net:
 - Configuration file location on M1 Mac: /opt/homebrew/etc/mongod.conf
 - run mongod with debugging (-v for level 1, -vvvvv for level 5)
     ```mongod -vvvvv --config /opt/homebrew/etc/mongod.conf```
-    
+
 - 'mongod not found' on M1 Mac
   - to run with full path to see if any errors:
     ```/opt/homebrew/opt/mongodb-community@4.4/bin/mongod```
-    
+
   - to set symbolic link to resolve problem:
     ```ln -s /opt/homebrew/Cellar/mongodb-community@4.4/4.4.10/bin/mongod /opt/homebrew/bin/mongod```
-    
+
 - monitor the mongo.log (tail to only see log items after starting command - <ctl>c to stop):
   ```tail -f /opt/homebrew/var/log/mongodb/mongo.log```
-  
+
 - "Error during global initialization","attr":{"error":{"code":38,"codeName":"FileNotOpen","errmsg":"Failed to open /opt/homebrew/var/log/mongodb/mongo.log"}}
   - check the security on the log file:
     ```ls -al /opt/homebrew/var/log/mongodb/mongo.log```
@@ -112,7 +112,7 @@ net:
 #### for mac you can use MacDown:
   https://macdown.uranusjr.com/)
 
- 
+
 ### Install Express
 [Express](http://expressjs.com/)
 
@@ -123,27 +123,27 @@ net:
 [TypeScript](https://www.typescriptlang.org/)
 
 #### Summary:
-    npm install typescript --save-dev
+    npm install -g typescript@3.5.2
 
 ### Set Up Development Environment variable in the .env file
 
 #### Option 1 - 21pstem Setup (OAUTH via Mathematical Thinking google accounts)
 1. Locate the most recent date stamped folder of the Mathematical Thinking environments file in the SoftwareConfigs / DotEnvFiles folder.
-2. 
+2.
 
 #### Option 2 - other setups (OAUTH via other google accounts)
 
 1. Copy the .env.example file to .env
 
     cp .env.example .env
-    
+
 1. ##### Set up OAuth with Google for Sign In with Google
 
     [Set Up Sign In with Google (To Do)](https://github.com/mathematicalthinking/mt-sso/wiki/Setup-Sign-In-with-Google)
 
 ## Start the Mathematical Thinking Single Sign On
     mongod --config /opt/homebrew/etc/mongod.conf
-    npm run dev 
+    npm run dev
 
 ### Setup To Do
 1. Database load or generated testing database
