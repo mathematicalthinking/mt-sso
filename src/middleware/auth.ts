@@ -13,7 +13,7 @@ export const verifyBearerToken = (
 ): void => {
   let token = extractBearerToken(req);
   if (token === undefined) {
-    return next(new createError[401]());
+    return next(createError(401, 'Bearer Token Not Verified.'))
   }
   req.mt.auth.bearerToken = token;
   next();
@@ -52,7 +52,7 @@ export const verifyRequestOrigin = async (
     }
     next();
   } catch (err) {
-    next(new createError[401]());
+    next(createError(401, err.message))
   }
 };
 

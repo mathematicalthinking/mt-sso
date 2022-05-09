@@ -14,13 +14,13 @@ export const revokeToken = async (
     // user will be the vmt user who was flagged with doForceLogout=true
     let user = getUser(req);
     if (user === undefined) {
-      return next(new createError[401]());
+      return next(new createError[401]('revokeToken: User Undefined'));
     }
 
     let { encodedToken } = req.body;
 
     if (typeof encodedToken !== 'string') {
-      return next(new createError[400]());
+      return next(new createError[400]('revokeToken: Token is not a string'));
     }
 
     let revokedToken = await RevokedToken.create({

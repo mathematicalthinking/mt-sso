@@ -12,7 +12,7 @@ export const createNewAccessToken = async (
   try {
     let user = getUser(req);
     if (user === undefined) {
-      return next(new createError[401]());
+      return next(createError(401, 'createAccessToken: user undefined'));
     }
     let accessToken = await generateAccessToken(user);
     res.json({

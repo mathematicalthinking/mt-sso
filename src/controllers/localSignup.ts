@@ -348,9 +348,7 @@ export const vmtSignup = async (
       // both creation processes failed
       // just return error
       return next(
-        new createError[500](
-          'Sorry, an unexpected error occured. Please try again.',
-        ),
+        new createError[500]('VMT user not found. Please try again.'),
       );
     }
 
@@ -430,11 +428,7 @@ export const vmtSignup = async (
       if (vmtUser) {
         VmtUser.findByIdAndDelete(vmtUser._id);
       }
-      return next(
-        new createError[500](
-          'Sorry, an unexpected error occured. Please try again.',
-        ),
-      );
+      return next(new createError[500](err.message));
     }
   }
 };

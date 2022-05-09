@@ -189,11 +189,7 @@ export const googleCallback = async (
           }
           // both creation processes failed
           // just return error
-          return next(
-            new createError[500](
-              'Sorry, an unexpected error occured. Please try again.',
-            ),
-          );
+          return next(new createError[500]('No User Found. Please try again.'));
         }
 
         mtUser.encUserId = encUser._id;
@@ -267,11 +263,7 @@ export const googleCallback = async (
       if (vmtUser) {
         VmtUser.findByIdAndDelete(vmtUser._id);
       }
-      return next(
-        new createError[500](
-          'Sorry, an unexpected error occured. Please try again.',
-        ),
-      );
+      return next(new createError[500](err.message));
     }
     next(err);
   }

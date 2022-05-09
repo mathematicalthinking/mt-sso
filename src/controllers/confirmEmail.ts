@@ -68,7 +68,9 @@ export const confirmEmail = async function(
 
     if (isNil(vmtUserId) || isNil(encUserId)) {
       // should never happen
-      return next(new createError[500]());
+      return next(
+        createError(500, 'Confirm Email: no VMT or Encompass user id'),
+      );
     }
 
     let {
@@ -83,9 +85,7 @@ export const confirmEmail = async function(
       // email on ssoUser
       await unconfirmEncVmtEmails(encUserId, vmtUserId);
       return next(
-        new createError[500](
-          'Sorry, an unexpected error occurred. Please try again.',
-        ),
+        new createError[500]('Email confirmation error. Please try again.'),
       );
     }
     wasEncVmtUpdateSuccess = true;
@@ -107,7 +107,7 @@ export const confirmEmail = async function(
     console.log('error confirm email: ', err);
 
     if (isNil(ssoUser)) {
-      return next(new createError[500]());
+      return next(new createError[500](err.message));
     }
 
     let doRevert = wasEncVmtUpdateSuccess && !didConfirmSsoUser;
@@ -121,11 +121,7 @@ export const confirmEmail = async function(
       }
       await unconfirmEncVmtEmails(encUserId, vmtUserId);
 
-      return next(
-        new createError[500](
-          'Sorry, an unexpected error occurred. Please try again.',
-        ),
-      );
+      return next(new createError[500](err.message));
     }
     next(err);
   }

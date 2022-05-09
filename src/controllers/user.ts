@@ -13,7 +13,7 @@ export const put = async (
     let user = getUser(req);
     if (user === undefined) {
       console.log('no user in user ctrl');
-      return next(new createError[401]());
+      return next(new createError[401]('Put: No User'));
     }
     let { id } = req.params;
 

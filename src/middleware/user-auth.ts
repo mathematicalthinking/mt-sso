@@ -173,7 +173,9 @@ export const validateRefreshToken = async (
   try {
     let encodedToken = req.body.refreshToken;
     if (encodedToken === undefined) {
-      return next(new createError[401]());
+      return next(
+        new createError[401]('validateRefreshToken: Token Undefined'),
+      );
     }
 
     let [isTokenValid, verifiedToken] = await Promise.all([
@@ -184,19 +186,27 @@ export const validateRefreshToken = async (
       // get sso user from db and put on req for controller
       let user = await User.findById(verifiedToken.ssoId).lean();
       if (user === null) {
-        return next(new createError[401]());
+        return next(
+          new createError[401]('validateRefreshToken: User not found'),
+        );
       }
 
       if (user.doRevokeRefreshToken || user.isSuspended) {
         await RevokedToken.create({ encodedToken, user: user._id });
 
-        return next(new createError[401]());
+        return next(
+          new createError[401]('validateRefreshToken: User is suspended'),
+        );
       }
       req.mt.auth.user = user;
       return next();
     }
     // refresh token has been revoked or is invalid
-    return next(new createError[401]());
+    return next(
+      new createError[401](
+        'validateRefreshToken: refresh token has been revoked or is invalid',
+      ),
+    );
   } catch (err) {
     console.log('validate refresh token err: ', err);
     next(err);
@@ -210,7 +220,7 @@ export const requireUser = (
 ): void => {
   let user = getUser(req);
   if (user === undefined) {
-    return next(new createError[401]());
+    return next(new createError[401]('requireUser: User not found'));
   }
   next();
 };
