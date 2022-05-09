@@ -52,6 +52,7 @@ export const verifyRequestOrigin = async (
     }
     next();
   } catch (err) {
+    err.message += 'THIS IS A TEST MESSAGE!!!!'
     next(createError(401, err.message))
   }
 };
