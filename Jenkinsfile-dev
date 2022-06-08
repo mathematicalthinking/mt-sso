@@ -1,0 +1,38 @@
+pipeline {
+    environment {
+        registry = "mathematicalthinking/mt-sso"
+        registryCredential = 'mt-docker-hub-credentials'
+        dockerImage = ''
+    }
+    agent {
+        docker { image '21pstem/dindbuildagent:latest' }
+    }
+    stages {
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    //checkout scm
+                    sh ls -la .
+                    dockerImage = docker.build(registry + ":$BUILD_NUMBER", "-f Dockerfile-dev .")
+                }
+            }
+        }
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage.push()
+                        //dockerImage.push('latest')
+                    }
+                }
+            }
+        }
+        stage('Deploy to test env') {
+            steps {
+                script {
+                    // docker swarm deploy cmds go here
+                }
+            }
+        }
+    }
+}
