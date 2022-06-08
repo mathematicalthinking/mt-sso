@@ -1,0 +1,22 @@
+FROM node:12.16.1@sha256:8fa78144d1864f2b08ca4a2d28e9cc32930d78850630652ff338793291a91f0c
+RUN apt update -y && apt upgrade -y && apt install -y curl wget bash iputils-ping net-tools dnsutils zip unzip python3 && ln -sf python3 /usr/bin/python
+
+RUN npm install -g npm@8.3.1 typescript@3.5.2
+
+WORKDIR /web
+# use changes to package.json to force Docker not to use the cache
+# when we change our application's nodejs dependencies:
+COPY package*.json ./
+
+# install dev dependencies for building
+RUN npm i
+
+# copy the code into the image for building
+COPY . ./
+
+# compile typescript
+RUN tsc
+
+EXPOSE 1342
+CMD ["node", "/web/dist/bin/main.js"]
+#CMD ["tail", "-f", "/dev/null"]
