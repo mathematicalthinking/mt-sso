@@ -56,19 +56,26 @@ const resolveTransporter = function(
         );
       } else {
         if (typeof username !== 'string') {
-          return reject(new Error('Missing gmail username'));
+          return reject(new Error('Missing email username'));
         }
 
         if (typeof password !== 'string') {
-          return reject(new Error('Missing gmail password'));
+          return reject(new Error('Missing email password'));
         }
 
         resolve(
           nodemailer.createTransport({
-            service: 'Gmail',
+            host: 'smtp.office365.com',
+            port: 587,
+            secure: true,
+            service: 'Outlook365',
             auth: {
               user: username,
               pass: password,
+            },
+            tls: {
+              maxVersion: 'TLSv1.3',
+              minVersion: 'TLSv1.2',
             },
           }),
         );

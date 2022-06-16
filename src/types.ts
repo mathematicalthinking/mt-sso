@@ -51,14 +51,12 @@ declare global {
       JWT_ISSUER_ID: string;
       ENC_URL: string;
       ENC_PATH_TO_MODELS: string;
-      ENC_GMAIL_USERNAME: string;
-      ENC_GMAIL_PASSWORD: string;
       ENC_JWT_ISSUER_ID: string;
       ENC_OAUTH_FAILURE_REDIRECT_PATH: string;
       VMT_URL: string;
       VMT_PATH_TO_MODELS: string;
-      VMT_GMAIL_USERNAME: string;
-      VMT_GMAIL_PASSWORD: string;
+      EMAIL_USERNAME: string;
+      EMAIL_PASSWORD: string;
       VMT_JWT_ISSUER_ID: string;
       VMT_OAUTH_FAILURE_REDIRECT_PATH: string;
       SSO_COOKIE_DOMAIN: string;
