@@ -243,9 +243,7 @@ export const googleCallback = async (
           sendEmailsToAdmins(hostUrl, appName, 'newUserNotification', mtUser);
         } else {
           sendEmailSMTP(
-            appName === AppNames.Enc
-              ? process.env.ENC_GMAIL_USERNAME
-              : process.env.VMT_GMAIL_USERNAME,
+            process.env.EMAIL_USERNAME,
             hostUrl,
             'newUserNotification',
             null,
