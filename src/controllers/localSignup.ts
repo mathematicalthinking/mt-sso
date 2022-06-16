@@ -271,7 +271,7 @@ export const encSignup = async (
         );
       } else {
         sendEmailSMTP(
-          process.env.ENC_GMAIL_USERNAME,
+          process.env.EMAIL_USERNAME,
           process.env.ENC_URL,
           'newUserNotification',
           null,
@@ -402,7 +402,7 @@ export const vmtSignup = async (
         );
       } else {
         sendEmailSMTP(
-          process.env.VMT_GMAIL_USERNAME,
+          process.env.EMAIL_USERNAME,
           process.env.VMT_URL,
           'newUserNotification',
           null,
