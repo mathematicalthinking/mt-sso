@@ -73,7 +73,7 @@ pipeline {
                             docker service rm mt-staging_sso
 
                             # redeploy the app service                            
-                            docker stack deploy --compose-file DevOpsTemp/mt/docker-compose-mt-apps-test.yml mt-staging
+                            docker stack deploy --compose-file DevOpsTemp/mt/docker-compose-mt-apps-staging.yml mt-staging
 
                             # restart nginx (clears the cache and reconnects the backend service)
                             docker service update --force mt-staging_nginx
