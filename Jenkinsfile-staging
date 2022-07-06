@@ -3,9 +3,9 @@ pipeline {
         registry = 'mathematicalthinking/mt-sso'
         registryCredential = 'mt-docker-hub-credentials'
         dockerImage = ''
-        deploymentHost = 'mttest'
-        githubRepo = 'git@github.com:htres736/mt-sso.git'
-        githubBranch = 'develop'
+        deploymentHost = 'mtstaging'
+        githubRepo = 'git@github.com:mathematicalthinking/mt-sso.git'
+        githubBranch = 'main'
     }
     agent any    
     stages {
@@ -23,7 +23,7 @@ pipeline {
                     // set the docker build context to local, assumes contexts have been set on the build server
                     sh 'docker context use default'
                     // build the docker image
-                    dockerImage = docker.build(registry + ":dev-build-$BUILD_NUMBER", "-f Dockerfile-dev .")                    
+                    dockerImage = docker.build(registry + ":staging-build-$BUILD_NUMBER", "-f Dockerfile-prod .")                    
                     }
                 }
             }
@@ -34,10 +34,10 @@ pipeline {
                     // push docker image to registry
                     docker.withRegistry('', registryCredential) {
                         dockerImage.push()
-                        dockerImage.push('dev-latest')
+                        dockerImage.push('staging-latest')
                     }
                     // clean up build image
-                    sh "docker rmi $registry:dev-build-$BUILD_NUMBER"                    
+                    sh "docker rmi $registry:staging-build-$BUILD_NUMBER"                    
                 }
             }
         }
@@ -54,7 +54,7 @@ pipeline {
                     userRemoteConfigs: [[credentialsId: 'jenkins-docker-ssh', url: 'git@github.com:21pstem/devops.git']]
                     ])                    
                     // copy .env files into same dir as stack file
-                    sh 'cp /home/jenkins/app-config/mt/environments/test/.env* DevOpsTemp/mt/'                    
+                    sh 'cp /home/jenkins/app-config/mt/environments/staging/.env* DevOpsTemp/mt/'                    
                     // use sshagent plugin to ssh to remote server
                     sshagent(['jenkins-docker-ssh']) {
                         sh """
@@ -67,16 +67,16 @@ pipeline {
                             docker context use ${deploymentHost}
                             
                             # pull the latest image
-                            docker pull ${registry}:dev-latest
+                            docker pull ${registry}:staging-latest
                                                         
                             # remove the docker swarm service
-                            docker service rm mt-test_sso
+                            docker service rm mt-staging_sso
 
                             # redeploy the app service                            
-                            docker stack deploy --compose-file DevOpsTemp/mt/docker-compose-mt-apps-test.yml mt-test
+                            docker stack deploy --compose-file DevOpsTemp/mt/docker-compose-mt-apps-staging.yml mt-staging
 
                             # restart nginx (clears the cache and reconnects the backend service)
-                            docker service update --force mt-test_nginx
+                            docker service update --force mt-staging_nginx
 
                             # set the docker build context back to local
                             docker context use default
