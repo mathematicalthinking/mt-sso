@@ -22,7 +22,7 @@
     "dotenv": "^8.0.0",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.15",
     "mongoose": "^5.6.1",
     "morgan": "~1.9.1",
