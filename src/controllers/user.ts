@@ -41,3 +41,27 @@ export const put = async (
     next(err);
   }
 };
+
+// @PARAM: users is an array of objects in the form { _id, username }
+// @RETURN: a promise that resolves to the bulkWrite result of updating the usernames
+
+export const updateUsernames = async (
+  users: [
+    {
+      _id: string;
+      username: string;
+    }
+  ],
+): Promise<object> => {
+  const bulkOps = users.map(
+    (user: { _id: string; username: string }): {} => {
+      return {
+        updateOne: {
+          filter: { vmtUserId: user._id },
+          update: { username: user.username },
+        },
+      };
+    },
+  );
+  return await User.bulkWrite(bulkOps);
+};
