@@ -48,20 +48,29 @@ export const put = async (
 export const updateUsernames = async (
   users: [
     {
-      _id: string;
-      username: string;
+      user: {
+        _id: string;
+        username: string;
+      };
+      role: string;
     }
   ],
 ): Promise<object> => {
+  console.log('updating usernames in sso');
+  console.log('users:');
+  console.log(users);
   const bulkOps = users.map(
-    (user: { _id: string; username: string }): {} => {
+    (user: { user: { _id: string; username: string }; role: string }): {} => {
       return {
         updateOne: {
-          filter: { vmtUserId: user._id },
-          update: { username: user.username },
+          filter: { vmtUserId: user.user._id },
+          update: { username: user.user.username },
         },
       };
     },
   );
+  console.log('bulkOps:');
+  console.log(bulkOps);
+  console.log('returning from sso');
   return await User.bulkWrite(bulkOps);
 };
