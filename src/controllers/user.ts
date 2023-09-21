@@ -42,35 +42,51 @@ export const put = async (
   }
 };
 
-// @PARAM: users is an array of objects in the form { _id, username }
+// @PARAM: users is an array of objects as shown below
 // @RETURN: a promise that resolves to the bulkWrite result of updating the usernames
+// users: [
+//   {
+//     user: {
+//       _id: string;
+//       username: string;
+//     };
+//     role: string;
+//   }
+// ],
 
 export const updateUsernames = async (
-  users: [
-    {
-      user: {
-        _id: string;
-        username: string;
-      };
-      role: string;
-    }
-  ],
-): Promise<object> => {
-  console.log('updating usernames in sso');
-  console.log('users:');
-  console.log(users);
-  const bulkOps = users.map(
-    (user: { user: { _id: string; username: string }; role: string }): {} => {
-      return {
-        updateOne: {
-          filter: { vmtUserId: user.user._id },
-          update: { username: user.user.username },
-        },
-      };
-    },
-  );
-  console.log('bulkOps:');
-  console.log(bulkOps);
-  console.log('returning from sso');
-  return await User.bulkWrite(bulkOps);
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  const { users } = req.body;
+  try {
+    console.log('updating usernames in sso');
+    console.log('users:');
+    console.log(users);
+    const bulkOps = users.map(
+      (user: { user: { _id: string; username: string }; role: string }): {} => {
+        return {
+          updateOne: {
+            filter: { vmtUserId: user.user._id },
+            update: { username: user.user.username },
+          },
+        };
+      },
+    );
+    console.log('bulkOps:');
+    console.log(bulkOps);
+    console.log('about to User.bulkWrite(bulkOps)');
+    await User.bulkWrite(bulkOps);
+    console.log('returning from sso');
+    res.json({ isSuccess: true });
+  } catch (error) {
+    console.log('error updating usernames in sso');
+    console.log('users:');
+    console.log(users);
+    console.log('error:');
+    console.log(error);
+    console.log('returning from sso');
+    next(error);
+  }
 };
