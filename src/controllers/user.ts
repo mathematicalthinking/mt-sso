@@ -65,11 +65,11 @@ export const updateUsernames = async (
     console.log('users:');
     console.log(users);
     const bulkOps = users.map(
-      (user: { user: { _id: string; username: string }; role: string }): {} => {
+      (user: { _id: string; username: string }): {} => {
         return {
           updateOne: {
-            filter: { vmtUserId: user.user._id },
-            update: { username: user.user.username },
+            filter: { vmtUserId: user._id },
+            update: { username: user.username },
           },
         };
       },
