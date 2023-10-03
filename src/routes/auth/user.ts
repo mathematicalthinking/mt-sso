@@ -5,6 +5,4 @@ import * as controller from '../../controllers/user';
 
 router.put('/:id', controller.put);
 
-router.put('/updateUsernames', controller.updateUsernames);
-
 export default router;

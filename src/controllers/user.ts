@@ -41,36 +41,3 @@ export const put = async (
     next(err);
   }
 };
-
-// @PARAM: users is an array of objects in the form { _id, username }
-// @RETURN: a promise that resolves to the bulkWrite result of updating the usernames
-
-export const updateUsernames = async (
-  users: [
-    {
-      user: {
-        _id: string;
-        username: string;
-      };
-      role: string;
-    }
-  ],
-): Promise<object> => {
-  console.log('updating usernames in sso');
-  console.log('users:');
-  console.log(users);
-  const bulkOps = users.map(
-    (user: { user: { _id: string; username: string }; role: string }): {} => {
-      return {
-        updateOne: {
-          filter: { vmtUserId: user.user._id },
-          update: { username: user.user.username },
-        },
-      };
-    },
-  );
-  console.log('bulkOps:');
-  console.log(bulkOps);
-  console.log('returning from sso');
-  return await User.bulkWrite(bulkOps);
-};
