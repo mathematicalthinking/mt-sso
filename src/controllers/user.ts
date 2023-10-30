@@ -43,10 +43,6 @@ export const put = async (
   }
 };
 
-// I need to make the request from Encompass or VMT first to get the updated users information.
-// After the username is updated via mt-sso, it will make the put request back to Encompass and VMT.
-
-// What is the URL for each app?
 const VMT_URI = process.env.VMT_URL;
 const ENC_URI = process.env.ENC_URL;
 const updateUserName = async (
@@ -66,8 +62,6 @@ const updateUserName = async (
       return next(createError(404, 'User does not exist'));
     }
     const bearerToken = req.headers['authorization'];
-
-    // handle bulk updateUsernames
 
     // const vmtResponse = await axios.put(VMT_URI, {
     //   userId,
