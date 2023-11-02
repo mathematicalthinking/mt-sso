@@ -47,11 +47,8 @@ export const put = async (
 // @RETURN: a promise that resolves to the bulkWrite result of updating the usernames
 // users: [
 //   {
-//     user: {
-//       _id: string;
-//       username: string;
-//     };
-//     role: string;
+//     _id: string;
+//     username: string;
 //   }
 // ],
 
