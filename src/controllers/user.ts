@@ -58,6 +58,7 @@ export const updateUsernames = async (
   next: express.NextFunction,
 ): Promise<void> => {
   const { users } = req.body;
+  console.log('users', users)
   try {
     const bulkOps = users.map(
       (user: { _id: string; username: string }): {} => {
@@ -69,6 +70,7 @@ export const updateUsernames = async (
         };
       },
     );
+    console.log('bulkOps', bulkOps)
     await User.bulkWrite(bulkOps);
 
     /* need to make calls to VMT and ENC
