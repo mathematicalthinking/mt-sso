@@ -43,14 +43,56 @@ export const put = async (
   }
 };
 
+// @PARAM: users is an array of objects as shown below
+// @RETURN: a promise that resolves to the bulkWrite result of updating the usernames
+// users: [
+//   {
+//     user: {
+//       _id: string;
+//       username: string;
+//     };
+//     role: string;
+//   }
+// ],
+
+export const updateUsernames = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction,
+): Promise<void> => {
+  const { users } = req.body;
+  try {
+    const bulkOps = users.map(
+      (user: { _id: string; username: string }): {} => {
+        return {
+          updateOne: {
+            filter: { _id: new ObjectId(user._id) },
+            update: { username: user.username },
+          },
+        };
+      },
+    );
+    await User.bulkWrite(bulkOps);
+
+    /* need to make calls to VMT and ENC
+     */
+
+    res.json({ isSuccess: true });
+  } catch (err) {
+    console.error(err);
+    next(createError(500, 'Error updating usernames'));
+  }
+};
+
 const VMT_URI = process.env.VMT_URL;
 const ENC_URI = process.env.ENC_URL;
-const updateUserName = async (
+export const updateUsername = async (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
   try {
+    console.log('updateUsername', req.params.id, req.body.username);
     const userId = req.params.id;
     const userName = req.body.username;
     const user = await User.updateOne(
@@ -95,8 +137,6 @@ const updateUserName = async (
     });
   } catch (err) {
     console.error(err);
-    next(createError(500, err.message));
+    next(createError(500, 'Error updating usernames'));
   }
 };
-
-export { updateUserName };

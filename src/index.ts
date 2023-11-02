@@ -63,7 +63,7 @@ const configure = (app: express.Application): void => {
       res: express.Response,
       next: express.NextFunction,
     ): void => {
-      next(createError(404));
+      next(createError(404, 'Route not found'));
     },
   );
 
