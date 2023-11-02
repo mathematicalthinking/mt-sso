@@ -61,16 +61,16 @@ export const updateUsernames = async (
   console.log('users', users)
   try {
     const bulkOps = users.map(
-      (user: { _id: string; username: string }): {} => {
+      (user: { id: string; username: string }): {} => {
         return {
           updateOne: {
-            filter: { _id: new ObjectId(user._id) },
+            filter: { _id: new ObjectId(user.id) },
             update: { username: user.username },
           },
         };
       },
     );
-    console.log('bulkOps', bulkOps)
+    console.log('bulkOps', bulkOps);
     await User.bulkWrite(bulkOps);
 
     /* need to make calls to VMT and ENC
