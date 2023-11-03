@@ -11,6 +11,7 @@ export const verifyBearerToken = (
   res: express.Response,
   next: express.NextFunction,
 ): void => {
+  console.log('verifyBearerToken');
   let token = extractBearerToken(req);
   if (token === undefined) {
     return next(new createError[401]());
@@ -28,6 +29,7 @@ export const verifyRequestOrigin = async (
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
+  console.log('verifyRequestOrigin');
   let { bearerToken, allowedIssuers } = req.mt.auth;
   let secret = process.env.MT_USER_JWT_SECRET;
   let allowedAudience = process.env.JWT_ISSUER_ID; // sso server

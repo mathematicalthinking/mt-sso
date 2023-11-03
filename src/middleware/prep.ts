@@ -21,6 +21,7 @@ export const pruneRequestBody = (
   res: Response,
   next: NextFunction,
 ): void => {
+  console.log('pruneRequestBody');
   let method = req.method;
   let doPrune = method === 'POST';
 
