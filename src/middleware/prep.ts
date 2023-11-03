@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 export const prep = (req: Request, res: Response, next: NextFunction): void => {
+  console.log('prep');
   let mtAuth = {
     mt: {
       auth: {
