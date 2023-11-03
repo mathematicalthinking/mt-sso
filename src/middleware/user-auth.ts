@@ -98,6 +98,7 @@ export const prepareMtUser = async (
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
+  console.log('prepareMtUser');
   let user = await getMtUser(req);
 
   if (user !== null) {
