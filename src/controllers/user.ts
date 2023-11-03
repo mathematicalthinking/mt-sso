@@ -57,9 +57,11 @@ export const updateUsernames = async (
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
+  console.log('inside updateUsernames');
   const { users } = req.body;
-  console.log('users', users)
+  console.log('users', users);
   try {
+    console.log('inside the try');
     const bulkOps = users.map(
       (user: { id: string; username: string }): {} => {
         return {
@@ -72,12 +74,14 @@ export const updateUsernames = async (
     );
     console.log('bulkOps', bulkOps);
     await User.bulkWrite(bulkOps);
+    console.log('afer the bulkWrite');
 
     /* need to make calls to VMT and ENC
      */
 
     res.json({ isSuccess: true });
   } catch (err) {
+    console.log('inside updateNames catch');
     console.error(err);
     next(createError(500, 'Error updating usernames'));
   }

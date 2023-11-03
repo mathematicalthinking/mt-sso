@@ -17,7 +17,11 @@ router.use('/forgot', forgot);
 router.use('/reset', reset);
 router.use('/accessToken', accessToken);
 router.use('/confirmEmail', confirmEmail);
-router.use('/user', user);
+router.use('/user', (req, res, next) => {
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+  user(req, res, next);
+});
 router.use('/revokedToken', revokedToken);
 
 export default router;
