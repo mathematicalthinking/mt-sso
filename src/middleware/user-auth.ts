@@ -80,7 +80,6 @@ export const getUserFromLogin = async (
 export const getMtUser = async (
   req: express.Request,
 ): Promise<UserDocument | null> => {
-  console.log('getMTuser');
   try {
     let { ssoId } = req.mt.auth;
 
@@ -90,7 +89,6 @@ export const getMtUser = async (
     return User.findById(ssoId);
     // if token is not verified, error will be thrown
   } catch (err) {
-    console.log('get mtuser error', err);
     return null;
   }
 };
@@ -100,7 +98,6 @@ export const prepareMtUser = async (
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
-  console.log('prepareMtUser');
   let user = await getMtUser(req);
 
   if (user !== null) {

@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 
 export const prep = (req: Request, res: Response, next: NextFunction): void => {
-  console.log('prep');
   let mtAuth = {
     mt: {
       auth: {
@@ -22,7 +21,6 @@ export const pruneRequestBody = (
   res: Response,
   next: NextFunction,
 ): void => {
-  console.log('pruneRequestBody');
   let method = req.method;
   let doPrune = method === 'POST';
 

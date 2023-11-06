@@ -4,7 +4,7 @@ pipeline {
         registryCredential = 'mt-docker-hub-credentials'
         dockerImage = ''
         deploymentHost = 'mttest'
-        githubRepo = 'git@github.com:htres736/mt-sso.git'
+        githubRepo = 'git@github.com:mathematicalthinking/mt-sso.git'
         githubBranch = 'develop'
     }
     agent any    
@@ -23,7 +23,7 @@ pipeline {
                     // set the docker build context to local, assumes contexts have been set on the build server
                     sh 'docker context use default'
                     // build the docker image
-                    dockerImage = docker.build(registry + ":dev-build-$BUILD_NUMBER", "--no-cache -f Dockerfile-dev .")                    
+                    dockerImage = docker.build(registry + ":dev-build-$BUILD_NUMBER", "-f Dockerfile-dev .")                    
                     }
                 }
             }

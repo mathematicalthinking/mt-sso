@@ -6,7 +6,6 @@ export default (
   next: express.NextFunction
 ): void => {
   // Website you wish to allow to connect
-  console.log('configureCors');
   res.setHeader(
     'Access-Control-Allow-Origin',
     `${process.env.ENC_URL}, ${process.env.VMT_URL}`
