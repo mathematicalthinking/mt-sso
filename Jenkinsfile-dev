@@ -23,7 +23,7 @@ pipeline {
                     // set the docker build context to local, assumes contexts have been set on the build server
                     sh 'docker context use default'
                     // build the docker image
-                    dockerImage = docker.build(registry + ":dev-build-$BUILD_NUMBER", "-f Dockerfile-dev .")                    
+                    dockerImage = docker.build(registry + ":dev-build-$BUILD_NUMBER", "--no-cache -f Dockerfile-dev .")                    
                     }
                 }
             }
