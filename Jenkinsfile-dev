@@ -4,7 +4,7 @@ pipeline {
         registryCredential = 'mt-docker-hub-credentials'
         dockerImage = ''
         deploymentHost = 'mttest'
-        githubRepo = 'git@github.com:htres736/mt-sso.git'
+        githubRepo = 'git@github.com:mathematicalthinking/mt-sso.git'
         githubBranch = 'develop'
     }
     agent any    
