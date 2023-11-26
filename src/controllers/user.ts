@@ -43,27 +43,75 @@ export const put = async (
   }
 };
 
-// @PARAM: users is an array of objects as shown below
-// @RETURN: a promise that resolves to the bulkWrite result of updating the usernames
-// users: [
-//   {
-//     _id: string;
-//     username: string;
-//   }
-// ],
+/**
+ * The constant that updateUsernames uses to figure out which
+ * apps need to be alerted about username changes.
+ */
+const APPS = [
+  {
+    baseURI: process.env.VMT_URL,
+    path: '/auth/sso/usernames',
+  },
+  {
+    baseURI: process.env.ENC_URL,
+    path: '/auth/sso/usernames',
+  },
+];
+
+const updateUsernamesInApp = async (
+  appConfig: { baseURI: string; path: string },
+  users: [{ _id: string; username: string }],
+  bearerToken: string,
+): Promise<{ status: number }> => {
+  console.log('appConfig', appConfig);
+  console.log('users', users);
+  return axios.put(
+    `${appConfig.baseURI}${appConfig.path}`,
+    { users },
+    {
+      headers: {
+        Authorization: `${bearerToken}`,
+      },
+    },
+  );
+};
+
+/**
+ * "updateUsernames" receives an array of SSO ids and new usernames,
+ * changing the usernames of these users. It then notifies other
+ * apps that use MT-SSO (right now, only VMT and EnCOMPass) about the
+ * changes because every app keeps usernames in its own database.
+ *
+ * @TODO Not good to hardwire the apps that need to be notified. A better
+ * approach would be to use a Publish/Subscribe model (every app subscribes
+ * to username changes with MT-SSO) or have the MT-SSO db be the only
+ * source of usernames.
+ *
+ * @PARAM: users is an array of objects as shown below
+ * @RETURN: a promise that resolves to the bulkWrite result of updating the usernames
+ *
+ * users: [
+ *   {
+ *     _id: string;
+ *     username: string;
+ *   }
+ * ],
+ */
 
 export const updateUsernames = async (
   req: express.Request,
   res: express.Response,
   next: express.NextFunction,
 ): Promise<void> => {
-  const { users } = req.body;
+  const { users, app } = req.body;
+  const bearerToken = req.headers['authorization'] || '';
+
   try {
     const bulkOps = users.map(
-      (user: { id: string; username: string }): {} => {
+      (user: { _id: string; username: string }): {} => {
         return {
           updateOne: {
-            filter: { _id: new ObjectId(user.id) },
+            filter: { _id: new ObjectId(user._id) },
             update: { username: user.username },
           },
         };
@@ -71,9 +119,18 @@ export const updateUsernames = async (
     );
     await User.bulkWrite(bulkOps);
 
-    /* need to make calls to VMT and ENC
-     */
-
+    const otherApps = APPS.filter(
+      appConfig => !appConfig.baseURI.includes(app),
+    );
+    const results = await Promise.all(
+      otherApps.map((appConfig: { baseURI: string; path: string }) =>
+        updateUsernamesInApp(appConfig, users, bearerToken),
+      ),
+    );
+    console.log('results from other apps', results);
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+    if (results.some(result => result.status !== 200))
+      console.log('Problem updating usernames in other apps');
     res.json({ isSuccess: true });
   } catch (err) {
     console.error(err);
