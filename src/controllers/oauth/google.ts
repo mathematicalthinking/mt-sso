@@ -23,6 +23,34 @@ import VmtUser from '../../models/VmtUser';
 import { sendEmailSMTP, sendEmailsToAdmins } from '../../utilities/emails';
 import { AppNames } from '../../config/app_urls';
 
+const getUniqueUsername = async (email: String) => {
+  let username;
+  let user;
+  const MAX_TRIES = 10;
+  let tries = 0;
+
+  do {
+    username = generateUsername(email);
+    user = await User.findOne({ username });
+    tries++;
+  } while (user && tries < MAX_TRIES);
+
+  if (tries >= MAX_TRIES)
+    throw new Error('Exceeded maximum attempts to generate a unique username');
+
+  return username;
+};
+
+const generateUsername = (email: String) => {
+  const emailPrefix = email.split('@')[0];
+
+  const shortPrefix = emailPrefix.substring(0, 5);
+
+  const randomThreeDigitNumber = Math.floor(100 + Math.random() * 900);
+
+  return shortPrefix + randomThreeDigitNumber;
+};
+
 export const handleUserProfile = async (
   userProfile: GoogleOauthProfileResponse,
 ): Promise<GoogleSignupResponse> => {
@@ -37,7 +65,7 @@ export const handleUserProfile = async (
 
   if (existingUser === null) {
     let mtUser = await User.create({
-      username: email,
+      username: await getUniqueUsername(email),
       email,
       googleId: sub,
       firstName: given_name,
