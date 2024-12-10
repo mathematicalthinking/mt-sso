@@ -3,7 +3,7 @@ pipeline {
         registry = 'mathematicalthinking/mt-sso'
         registryCredential = 'mt-docker-hub-credentials'
         dockerImage = ''
-        deploymentHost = 'mttest'
+        deploymentHost = 'mt-test'
         githubRepo = 'git@github.com:mathematicalthinking/mt-sso.git'
         githubBranch = 'develop'
     }
