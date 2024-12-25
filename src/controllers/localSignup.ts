@@ -107,6 +107,7 @@ export const createVmtUser = async (
 
     if (requestBodyType === 'google' && requestBody.username) {
       username = requestBody.username;
+      isEmailConfirmed = true;
     }
 
     let vmtUserBody = {
