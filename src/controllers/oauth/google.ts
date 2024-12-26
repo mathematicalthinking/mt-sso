@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import express from 'express';
 import axios from 'axios';
-import { isNil } from 'lodash';
 import createError from 'http-errors';
 
 import User from '../../models/User';
@@ -9,6 +8,10 @@ import {
   GoogleOauthProfileResponse,
   GoogleSignupResponse,
   GoogleOauthTokenResponse,
+  VmtUserDocument,
+  EncUserDocument,
+  UserDocument,
+  VmtAccountType,
 } from '../../types';
 import {
   setSsoCookie,
@@ -22,6 +25,34 @@ import EncUser from '../../models/EncUser';
 import VmtUser from '../../models/VmtUser';
 import { sendEmailSMTP, sendEmailsToAdmins } from '../../utilities/emails';
 import { AppNames } from '../../config/app_urls';
+
+const getUniqueUsername = async (email: String) => {
+  let username;
+  let user;
+  const MAX_TRIES = 10;
+  let tries = 0;
+
+  do {
+    username = generateUsername(email);
+    user = await User.findOne({ username });
+    tries++;
+  } while (user && tries < MAX_TRIES);
+
+  if (tries >= MAX_TRIES)
+    throw new Error('Exceeded maximum attempts to generate a unique username');
+
+  return username;
+};
+
+const generateUsername = (email: String) => {
+  const emailPrefix = email.split('@')[0];
+
+  const shortPrefix = emailPrefix.substring(0, 5);
+
+  const randomThreeDigitNumber = Math.floor(100 + Math.random() * 900);
+
+  return shortPrefix + randomThreeDigitNumber;
+};
 
 export const handleUserProfile = async (
   userProfile: GoogleOauthProfileResponse,
@@ -37,7 +68,7 @@ export const handleUserProfile = async (
 
   if (existingUser === null) {
     let mtUser = await User.create({
-      username: email,
+      username: await getUniqueUsername(email),
       email,
       googleId: sub,
       firstName: given_name,
@@ -75,203 +106,191 @@ export const googleCallback = async (
   next: express.NextFunction,
 ): Promise<void> => {
   let mtUser;
-  let didCreateMtUser = false;
-  let encUser;
-  let vmtUser;
+  let createdEncUser: EncUserDocument | null = null;
+  let createdVmtUser: VmtUserDocument | null = null;
+  let vmtUserData: VmtUserDocument | null = null;
+  const falureRedirectUrl =
+    (req.cookies && req.cookies.failureRedirectUrl) || '/';
 
   try {
+    // 1. Verify access token
     let { code } = req.query;
-    if (code === undefined) {
-      return;
+    if (!code) {
+      return res.redirect(`${falureRedirectUrl}?oauthError=missingCode`);
     }
 
-    if (code) {
-      // exchange code for access token
-      let googleEndpoint = `https://www.googleapis.com/oauth2/v4/token`;
-      let params = {
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: process.env.GOOGLE_CALLBACK_URL,
-        grant_type: 'authorization_code',
-      };
+    // exchange code for access token
+    const googleTokenURL = `https://www.googleapis.com/oauth2/v4/token`;
+    const tokenParams = {
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: process.env.GOOGLE_CALLBACK_URL,
+      grant_type: 'authorization_code',
+    };
 
-      let results = await axios.post(googleEndpoint, params);
+    const tokenResp = await axios.post<GoogleOauthTokenResponse>(
+      googleTokenURL,
+      tokenParams,
+    );
 
-      let resultsData: GoogleOauthTokenResponse = results.data;
+    const { access_token } = tokenResp.data;
+    if (!access_token) {
+      return res.redirect(`${falureRedirectUrl}?oauthError=missingAccessToken`);
+    }
 
-      let { access_token } = resultsData;
-      let userProfileEndpoint = 'https://www.googleapis.com/oauth2/v3/userinfo';
+    // 2. Get user profile from Google
 
-      let config = {
-        headers: { Authorization: 'Bearer ' + access_token },
-      };
+    const profileResults = await axios.get<GoogleOauthProfileResponse>(
+      'https://www.googleapis.com/oauth2/v3/userinfo',
+      {
+        headers: { Authorization: `Bearer ${access_token}` },
+      },
+    );
 
-      let profileResults = await axios.get(userProfileEndpoint, config);
+    const profile = profileResults.data;
 
-      let profile: GoogleOauthProfileResponse = profileResults.data;
+    // 3. Find or create mtUser; handle errors
 
-      let mtUserResults = await handleUserProfile(profile);
-      mtUser = mtUserResults.mtUser;
-      if (mtUser === null) {
-        let redirectUrl = req.cookies.failureRedirectUrl;
-        let error = 'oauthError=emailUnavailable';
+    let mtUserResults = await handleUserProfile(profile);
+    mtUser = mtUserResults.mtUser;
+    if (!mtUser) {
+      return res.redirect(`${falureRedirectUrl}?oauthError=emailUnavailable`);
+    }
+    if (mtUser.isSuspended) {
+      return res.redirect(`${falureRedirectUrl}?oauthError=userSuspended`);
+    }
 
-        res.redirect(`${redirectUrl}?${error}`);
+    // 4. Create EncUser and VmtUser as necessary
+    // Under normal circumstances, an mtUser should have both encUserId and vmtUserId. It will not if we have just created the mtUser
+    // (i.e., if the user is signing in with Google for the first time).  However, there could have been an error in creating either
+    // the EncUser or the VmtUser. What we will do is create an EncUser if mtuser.encUserId is null, and a VmtUser if mtUser.vmtUserId
+    // is null. If either of these fails, we will delete the users that we just created.
 
-        return;
+    // Note that for VMT, there is a special circumstance where a user could have a VMT account with the email address but with the
+    // accountType 'pending'. If this is the case, we will swap the ssoId of the pending account with the ssoId of the new mtuser and
+    // change the accountType to 'facilitator'. We will do this instead of creating a new VmtUser.
+
+    if (!mtUser.encUserId) {
+      createdEncUser = await createEncUser(mtUser, {}, 'google');
+    }
+    if (!mtUser.vmtUserId) {
+      vmtUserData = await VmtUser.findOne({ email: mtUser.email });
+      createdVmtUser = await createVmtUser(mtUser, vmtUserData || {}, 'google');
+    } else {
+      await handleConvertingPendingVmtUser(mtUser);
+    }
+
+    // if either of the above fails, we will delete the users that we just created
+    // but we will not delete the existing vmtUser if we are converting a pending account
+    if (
+      (!mtUser.encUserId && !createdEncUser) ||
+      (!mtUser.vmtUserId && !createdVmtUser)
+    ) {
+      if (createdEncUser) {
+        await EncUser.findByIdAndDelete(createdEncUser._id);
       }
-      // What is best way to know if user is signing in with google for the first time?
-      // Should never have only one of encUserId / vmtUserId ... but what if one failed for some reason?
-
-      let isNewUser = isNil(mtUser.encUserId);
-
-      if (!isNewUser) {
-        // catch if pending user data was not added to existing VMT user
-        // Matches for VMT user with same email and 'pending' accountType
-        // env toggle to enable feature
-        if (
-          process.env.VMT_YES_TO_CONVT_PENDING &&
-          process.env.VMT_YES_TO_CONVT_PENDING.toLowerCase() === 'yes'
-        ) {
-          // find VMT user with data
-          const vmtPendingData = await VmtUser.findOne({
-            email: mtUser.email,
-            accountType: 'pending',
-          });
-          // find duplicate VMT user to remove
-          const vmtMTdata = await VmtUser.findOne({
-            email: mtUser.email,
-            ssoId: mtUser._id,
-          });
-          if (
-            vmtPendingData &&
-            vmtPendingData.accountType === 'pending' &&
-            vmtMTdata
-          ) {
-            // Swap linked Ids to link sso account with VMT account with data
-            await VmtUser.findByIdAndUpdate(vmtPendingData._id, {
-              ssoId: mtUser._id,
-              accountType: 'facilitator',
-              isEmailConfirmed: true,
-            });
-            mtUser.vmtUserId = vmtPendingData._id;
-            await mtUser.save();
-
-            // invalidate or delete duplicate record
-            await VmtUser.findByIdAndUpdate(vmtMTdata._id, {
-              isTrashed: true,
-              accountType: 'temp',
-              email: '',
-            });
-            // await VmtUser.findByIdAndUpdate(vmtMTdata._id, { ssoId: '' });
-            // await VmtUser.findByIdAndDelete(vmtMTdata._id);
-          }
-        }
+      if (createdVmtUser && !vmtUserData) {
+        await VmtUser.findByIdAndDelete(createdVmtUser._id);
       }
+      return next(
+        new createError[500](
+          'Failed to create Encompass or VMT user. Please try again.',
+        ),
+      );
+    }
+    if (createdEncUser) mtUser.encUserId = createdEncUser._id;
+    if (createdVmtUser) mtUser.vmtUserId = createdVmtUser._id;
 
-      if (isNewUser) {
-        // check to see if the email is pre-loaded to VMT with user-data
-        const vmtUserData = await VmtUser.findOne({ email: mtUser.email });
+    await mtUser.save();
 
-        [encUser, vmtUser] = await Promise.all([
-          createEncUser(mtUser, {}, 'google'),
-          createVmtUser(mtUser, vmtUserData || {}, 'google'),
-        ]);
+    // 5. Generate access and refresh tokens
+    let [accessToken, refreshToken] = await Promise.all([
+      generateAccessToken(mtUser),
+      generateRefreshToken(mtUser),
+    ]);
 
-        if (encUser === null || vmtUser === null) {
-          if (encUser !== null) {
-            // vmt errored but enc was successful
-            // revert creating of enc user
-            await EncUser.findByIdAndDelete(encUser._id);
-          } else if (vmtUser !== null) {
-            await VmtUser.findByIdAndDelete(vmtUser._id);
-          }
-          // both creation processes failed
-          // just return error
-          return next(
-            new createError[500](
-              'Sorry, an unexpected error occured. Please try again.',
-            ),
-          );
-        }
+    setSsoCookie(res, accessToken);
+    setSsoRefreshCookie(res, refreshToken);
 
-        mtUser.encUserId = encUser._id;
-        mtUser.vmtUserId = vmtUser._id;
+    // 6. Redirect to correct app and send welcome or notification email
+    let redirectURL = req.cookies.successRedirectUrl || process.env.VMT_URL;
+    let appName;
+    let hostUrl;
 
-        await mtUser.save();
-        didCreateMtUser = true;
-      }
+    if (redirectURL.includes(process.env.ENC_URL)) {
+      appName = AppNames.Enc;
+      hostUrl = process.env.ENC_URL;
+    } else {
+      appName = AppNames.Vmt;
+      hostUrl = process.env.VMT_URL;
+    }
 
-      if (mtUser.isSuspended) {
-        let redirectUrl = req.cookies.failureRedirectUrl;
-        let error = 'oauthError=userSuspended';
-        res.redirect(`${redirectUrl}?${error}`);
-        return;
-      }
-      let [accessToken, refreshToken] = await Promise.all([
-        generateAccessToken(mtUser),
-        generateRefreshToken(mtUser),
-      ]);
+    if (createdEncUser || createdVmtUser) {
+      sendEmailSMTP(
+        mtUser.email || '',
+        hostUrl,
+        'googleSignup',
+        null,
+        mtUser,
+        appName,
+      );
 
-      setSsoCookie(res, accessToken);
-      setSsoRefreshCookie(res, refreshToken);
-
-      let redirectURL = req.cookies.successRedirectUrl;
-      let appName;
-      let hostUrl;
-
-      if (redirectURL.includes(process.env.ENC_URL)) {
-        appName = AppNames.Enc;
-        hostUrl = process.env.ENC_URL;
+      if (process.env.NODE_ENV === 'production') {
+        sendEmailsToAdmins(hostUrl, appName, 'newUserNotification', mtUser);
       } else {
-        appName = AppNames.Vmt;
-        hostUrl = process.env.VMT_URL;
-      }
-
-      if (isNewUser) {
         sendEmailSMTP(
-          mtUser.email || '',
+          process.env.EMAIL_USERNAME,
           hostUrl,
-          'googleSignup',
+          'newUserNotification',
           null,
           mtUser,
           appName,
         );
-
-        if (process.env.NODE_ENV === 'production') {
-          sendEmailsToAdmins(hostUrl, appName, 'newUserNotification', mtUser);
-        } else {
-          sendEmailSMTP(
-            process.env.EMAIL_USERNAME,
-            hostUrl,
-            'newUserNotification',
-            null,
-            mtUser,
-            appName,
-          );
-        }
       }
-
-      res.redirect(redirectURL);
     }
+
+    res.redirect(redirectURL);
   } catch (err) {
-    if (didCreateMtUser === false) {
-      // error creating sso user
-      // revert enc / vmt creation if necessary
-      if (encUser) {
-        EncUser.findByIdAndDelete(encUser._id);
-      }
-      if (vmtUser) {
-        VmtUser.findByIdAndDelete(vmtUser._id);
-      }
-      return next(
-        new createError[500](
-          'Sorry, an unexpected error occured. Please try again.',
-        ),
-      );
+    if (createdEncUser) {
+      await EncUser.findByIdAndDelete(createdEncUser._id);
     }
-    next(err);
+    if (createdVmtUser && !vmtUserData) {
+      await VmtUser.findByIdAndDelete(createdVmtUser._id);
+    }
+    return next(
+      new createError[500](
+        `Google callback error: ${
+          err instanceof Error ? err.message : 'Unknown error'
+        }`,
+      ),
+    );
+  }
+};
+
+const handleConvertingPendingVmtUser = async (mtUser: UserDocument) => {
+  const vmtPendingUser = await VmtUser.findOne({
+    email: mtUser.email,
+    accountType: 'pending',
+  });
+  const vmtUser = await VmtUser.findOne({
+    email: mtUser.email,
+    ssoId: mtUser._id,
+  });
+
+  if (vmtPendingUser) {
+    vmtPendingUser.ssoId = mtUser._id;
+    vmtPendingUser.accountType = VmtAccountType.facilitator;
+    vmtPendingUser.isEmailConfirmed = true;
+    mtUser.vmtUserId = vmtPendingUser._id;
+    await vmtPendingUser.save();
+    await mtUser.save();
+  }
+  if (vmtUser) {
+    // Mark the duplicate user as trashed
+    vmtUser.isTrashed = true;
+    vmtUser.email = '';
+    await vmtUser.save();
   }
 };
 
