@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-use-before-define */
 /* eslint-disable @typescript-eslint/camelcase */
 import express from 'express';
 import axios from 'axios';
@@ -26,7 +27,7 @@ import VmtUser from '../../models/VmtUser';
 import { sendEmailSMTP, sendEmailsToAdmins } from '../../utilities/emails';
 import { AppNames } from '../../config/app_urls';
 
-const getUniqueUsername = async (email: String) => {
+const getUniqueUsername = async (email: string): Promise<string> => {
   let username;
   let user;
   const MAX_TRIES = 10;
@@ -44,7 +45,7 @@ const getUniqueUsername = async (email: String) => {
   return username;
 };
 
-const generateUsername = (email: String) => {
+const generateUsername = (email: string): string => {
   const emailPrefix = email.split('@')[0];
 
   const shortPrefix = emailPrefix.substring(0, 5);
@@ -268,29 +269,32 @@ export const googleCallback = async (
   }
 };
 
-const handleConvertingPendingVmtUser = async (mtUser: UserDocument) => {
+const handleConvertingPendingVmtUser = async (
+  mtUser: UserDocument,
+): Promise<void> => {
   const vmtPendingUser = await VmtUser.findOne({
     email: mtUser.email,
     accountType: 'pending',
   });
-  const vmtUser = await VmtUser.findOne({
-    email: mtUser.email,
-    ssoId: mtUser._id,
-  });
 
   if (vmtPendingUser) {
+    const vmtUser = await VmtUser.findOne({
+      email: mtUser.email,
+      ssoId: mtUser._id,
+      accountType: { $ne: 'pending' },
+    });
+    // if there was a duplicate vmtUser, we will delete it
+    if (vmtUser) {
+      vmtUser.isTrashed = true;
+      vmtUser.email = '';
+      await vmtUser.save();
+    }
     vmtPendingUser.ssoId = mtUser._id;
     vmtPendingUser.accountType = VmtAccountType.facilitator;
     vmtPendingUser.isEmailConfirmed = true;
     mtUser.vmtUserId = vmtPendingUser._id;
     await vmtPendingUser.save();
     await mtUser.save();
-  }
-  if (vmtUser) {
-    // Mark the duplicate user as trashed
-    vmtUser.isTrashed = true;
-    vmtUser.email = '';
-    await vmtUser.save();
   }
 };
 
