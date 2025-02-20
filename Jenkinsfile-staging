@@ -41,7 +41,7 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to test server') {
+        // stage('Deploy to test server') {
         //     steps {
         //         script {
         //             // checkout the devops git repo to get the swarm stack file
