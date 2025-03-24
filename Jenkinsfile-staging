@@ -41,6 +41,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy to test server') {
             steps {
                 script {
@@ -68,7 +69,7 @@ pipeline {
                             
                             # pull the latest image
                             docker pull ${registry}:staging-latest
-                                                        
+                                                     
                             # remove the docker swarm service
                             docker service rm mt-test_sso-staging
 
@@ -77,6 +78,15 @@ pipeline {
 
                             # restart nginx (clears the cache and reconnects the backend service)
                             docker service update --force mt-test_nginx
+
+                            # remove the docker swarm service
+                            docker service rm mt-staging_sso
+
+                            # redeploy the app service                            
+                            docker stack deploy --compose-file DevOpsTemp/mt/docker-compose-mt-apps-staging.yml mt-staging
+
+                            # restart nginx (clears the cache and reconnects the backend service)
+                            docker service update --force mt-staging_nginx
 
                             # set the docker build context back to local
                             docker context use default
