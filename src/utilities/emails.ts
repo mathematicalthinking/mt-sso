@@ -9,6 +9,33 @@ import { AppNames } from '../config/app_urls';
 import User from '../models/User';
 import Mail = require('nodemailer/lib/mailer');
 
+const transportConfig = function(username: string): any {
+  if (
+    process.env.EMAIL_HOST &&
+    process.env.EMAIL_PORT &&
+    process.env.EMAIL_SECURE &&
+    process.env.EMAIL_SERVICE &&
+    process.env.EMAIL_AUTH_TYPE &&
+    process.env.EMAIL_AUTH_CLIENTID &&
+    process.env.EMAIL_AUTH_CLIENTSECRET
+  ) {
+    return {
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: process.env.EMAIL_SECURE === 'true',
+      service: process.env.EMAIL_SERVICE,
+      auth: {
+        type: process.env.EMAIL_AUTH_TYPE,
+        user: username,
+        clientId: process.env.EMAIL_AUTH_CLIENTID,
+        clientSecret: process.env.EMAIL_AUTH_CLIENTSECRET,
+      },
+    };
+  }
+
+  return null;
+};
+
 const resolveTransporter = function(
   username?: string,
   password?: string,
@@ -63,22 +90,12 @@ const resolveTransporter = function(
           return reject(new Error('Missing email password'));
         }
 
-        resolve(
-          nodemailer.createTransport({
-            host: 'smtp.office365.com',
-            port: 587,
-            secure: true,
-            service: 'Outlook365',
-            auth: {
-              user: username,
-              pass: password,
-            },
-            tls: {
-              maxVersion: 'TLSv1.3',
-              minVersion: 'TLSv1.2',
-            },
-          }),
-        );
+        const transportConfiguration = transportConfig(username);
+        if (transportConfig === null) {
+          return reject(new Error('Missing email configuration'));
+        }
+
+        resolve(nodemailer.createTransport(transportConfiguration));
       }
     },
   );
