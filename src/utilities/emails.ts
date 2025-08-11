@@ -91,7 +91,7 @@ const resolveTransporter = function(
         }
 
         const transportConfiguration = transportConfig(username);
-        if (transportConfig === null) {
+        if (!transportConfiguration) {
           return reject(new Error('Missing email configuration'));
         }
 
