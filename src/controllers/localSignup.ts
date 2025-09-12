@@ -254,7 +254,7 @@ export const encSignup = async (
 
       await mtUser.save();
 
-      sendEmailSMTP(
+      await sendEmailSMTP(
         userEmail,
         process.env.ENC_URL,
         'confirmEmailAddress',
@@ -264,14 +264,14 @@ export const encSignup = async (
       );
 
       if (process.env.NODE_ENV === 'production') {
-        sendEmailsToAdmins(
+        await sendEmailsToAdmins(
           process.env.ENC_URL,
           AppNames.Enc,
           'newUserNotification',
           mtUser,
         );
       } else {
-        sendEmailSMTP(
+        await sendEmailSMTP(
           process.env.EMAIL_USERNAME,
           process.env.ENC_URL,
           'newUserNotification',
@@ -383,7 +383,7 @@ export const vmtSignup = async (
       ); // 1 day
 
       await mtUser.save();
-      sendEmailSMTP(
+      await sendEmailSMTP(
         userEmail,
         process.env.VMT_URL,
         'confirmEmailAddress',
@@ -395,14 +395,14 @@ export const vmtSignup = async (
       // otherwise send to test gmail account
 
       if (process.env.NODE_ENV === 'production') {
-        sendEmailsToAdmins(
+        await sendEmailsToAdmins(
           process.env.VMT_URL,
           AppNames.Vmt,
           'newUserNotification',
           mtUser,
         );
       } else {
-        sendEmailSMTP(
+        await sendEmailSMTP(
           process.env.EMAIL_USERNAME,
           process.env.VMT_URL,
           'newUserNotification',

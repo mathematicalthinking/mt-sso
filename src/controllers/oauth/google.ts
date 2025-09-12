@@ -228,7 +228,7 @@ export const googleCallback = async (
     }
 
     if (createdEncUser || createdVmtUser) {
-      sendEmailSMTP(
+      await sendEmailSMTP(
         mtUser.email || '',
         hostUrl,
         'googleSignup',
@@ -238,9 +238,14 @@ export const googleCallback = async (
       );
 
       if (process.env.NODE_ENV === 'production') {
-        sendEmailsToAdmins(hostUrl, appName, 'newUserNotification', mtUser);
+        await sendEmailsToAdmins(
+          hostUrl,
+          appName,
+          'newUserNotification',
+          mtUser,
+        );
       } else {
-        sendEmailSMTP(
+        await sendEmailSMTP(
           process.env.EMAIL_USERNAME,
           hostUrl,
           'newUserNotification',
