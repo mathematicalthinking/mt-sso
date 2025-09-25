@@ -15,8 +15,8 @@ export async function validateResetToken(
   try {
     const user = await User.findOne({
       resetPasswordToken: req.params.token,
-      resetPasswordExpires: { $gt: Date.now() },
-    }).lean();
+      resetPasswordExpires: { $gt: new Date() },
+    });
 
     if (user === null) {
       res.json({
@@ -38,7 +38,7 @@ export async function resetPassword(
   try {
     const user = await User.findOne({
       resetPasswordToken: req.params.token,
-      resetPasswordExpires: { $gt: Date.now() },
+      resetPasswordExpires: { $gt: new Date() },
     });
     if (user === null) {
       res.json({
