@@ -55,8 +55,6 @@ declare global {
       ENC_OAUTH_FAILURE_REDIRECT_PATH: string;
       VMT_URL: string;
       VMT_PATH_TO_MODELS: string;
-      EMAIL_USERNAME: string;
-      EMAIL_PASSWORD: string;
       VMT_JWT_ISSUER_ID: string;
       VMT_OAUTH_FAILURE_REDIRECT_PATH: string;
       SSO_COOKIE_DOMAIN: string;
@@ -87,6 +85,24 @@ declare global {
       ENC_STAGE_DB_SSL_KEY_DIR: string;
       ENC_STAGE_DB_SSL_CERT_DIR: string;
       ENC_STAGE_DB_AUTHDB: string;
+
+      // Mail-related env keys
+      EMAIL_HOST: string;          // e.g. smtp.office365.com
+      EMAIL_PORT: string;          // e.g. "587"
+      EMAIL_SECURE: 'true' | 'false';
+      EMAIL_AUTH_METHOD: 'password' | 'oauth2_cc' | 'oauth2_delegated';
+      EMAIL_USERNAME: string;
+
+      // If using password auth
+      EMAIL_PASSWORD?: string;
+
+      // If using OAuth2 client credentials (app-only)
+      EMAIL_AUTH_TENANTID?: string;
+      EMAIL_AUTH_CLIENTID?: string;
+      EMAIL_AUTH_CLIENTSECRET?: string;
+
+      // If using delegated flow
+      EMAIL_AUTH_REFRESHTOKEN?: string;
     }
   }
 }
