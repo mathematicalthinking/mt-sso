@@ -24,13 +24,13 @@ export const emailEnv = {
     return process.env.EMAIL_SECURE === 'true'; // false => STARTTLS on 587
   },
   method(): AuthMethod {
-    const m = process.env.EMAIL_AUTH_METHOD?.toLowerCase();
+    const m = process.env.EMAIL_AUTH_METHOD
+      ? process.env.EMAIL_AUTH_METHOD.toLowerCase()
+      : undefined;
     if (m === 'oauth2_cc' || m === 'oauth2_delegated' || m === 'password') {
-      return m;
+      return m as AuthMethod;
     }
-    console.log(
-      `Unsupported EMAIL_AUTH_METHOD: ${m}. Defaulting to password`,
-    );
+    console.log(`Unsupported EMAIL_AUTH_METHOD: ${m}. Defaulting to password`);
     return 'password';
   },
   username(): string {
