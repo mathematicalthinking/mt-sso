@@ -11,7 +11,7 @@ function requireEnv(key: string): string {
 /** Centralized accessors for mail-related env vars */
 export const emailEnv = {
   host(): string {
-    return requireEnv('EMAIL_HOST');            // e.g. smtp.office365.com
+    return requireEnv('EMAIL_HOST'); // e.g. smtp.office365.com
   },
   port(): number {
     const v = process.env.EMAIL_PORT;
@@ -24,12 +24,17 @@ export const emailEnv = {
     return process.env.EMAIL_SECURE === 'true'; // false => STARTTLS on 587
   },
   method(): AuthMethod {
-    const m = (process.env.EMAIL_AUTH_METHOD || 'password').toLowerCase();
-    if (m === 'password' || m === 'oauth2_cc' || m === 'oauth2_delegated') return m;
-    throw new Error(`Unknown EMAIL_AUTH_METHOD: ${m}`);
+    const m = process.env.EMAIL_AUTH_METHOD?.toLowerCase();
+    if (m === 'oauth2_cc' || m === 'oauth2_delegated' || m === 'password') {
+      return m;
+    }
+    console.log(
+      `Unsupported EMAIL_AUTH_METHOD: ${m}. Defaulting to password`,
+    );
+    return 'password';
   },
   username(): string {
-    return requireEnv('EMAIL_USERNAME');        // mailbox UPN you send as
+    return requireEnv('EMAIL_USERNAME'); // mailbox UPN you send as
   },
 
   // Password method
