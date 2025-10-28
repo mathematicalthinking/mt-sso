@@ -4,7 +4,11 @@ import fs from 'fs';
 import { emailEnv } from '../config/emails';
 import { getMsAppAccessToken } from './emailAuth';
 import templates from '../constants/email_templates';
-import { EmailTemplateHash, UserDocument, EmailTemplateGenerator } from '../types';
+import {
+  EmailTemplateHash,
+  UserDocument,
+  EmailTemplateGenerator,
+} from '../types';
 import { AppNames } from '../config/app_urls';
 import User from '../models/User';
 import Mail = require('nodemailer/lib/mailer');
@@ -12,11 +16,19 @@ import Mail = require('nodemailer/lib/mailer');
 type TemplateName = keyof typeof templates;
 
 async function resolveTransporter(): Promise<Mail> {
+  console.log('Resolving email transporter');
   if (process.env.NODE_ENV === 'test') {
-    const account = await new Promise<nodemailer.TestAccount>((resolve, reject) =>
-      nodemailer.createTestAccount((err, acc) => (err ? reject(err) : resolve(acc))),
+    console.log('Using ethereal email account for testing');
+    const account = await new Promise<nodemailer.TestAccount>(
+      (resolve, reject) =>
+        nodemailer.createTestAccount((err, acc) =>
+          err ? reject(err) : resolve(acc),
+        ),
     );
-    fs.writeFileSync('ethereal_creds.json', JSON.stringify({ user: account.user, pass: account.pass }));
+    fs.writeFileSync(
+      'ethereal_creds.json',
+      JSON.stringify({ user: account.user, pass: account.pass }),
+    );
     return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
@@ -25,6 +37,8 @@ async function resolveTransporter(): Promise<Mail> {
     });
   }
 
+  console.log('Using production email account');
+
   const method = emailEnv.method();
   const username = emailEnv.username();
   const host = emailEnv.host();
@@ -32,9 +46,20 @@ async function resolveTransporter(): Promise<Mail> {
   const secure = emailEnv.secure();
 
   if (method === 'oauth2_cc') {
+    console.log('Using OAuth2 Client Credentials for email authentication');
     const accessToken = await getMsAppAccessToken();
+    console.log('Obtained access token for OAuth2 Client Credentials');
+    console.log('Email config:', {
+      host,
+      port,
+      secure,
+      username,
+      tokenLength: accessToken.length,
+    });
     return nodemailer.createTransport({
-      host, port, secure,
+      host,
+      port,
+      secure,
       auth: { type: 'OAuth2', user: username, accessToken },
     });
   }
@@ -42,7 +67,9 @@ async function resolveTransporter(): Promise<Mail> {
   if (method === 'password') {
     const password = emailEnv.password();
     return nodemailer.createTransport({
-      host, port, secure,
+      host,
+      port,
+      secure,
       auth: { user: username, pass: password },
     });
   }
@@ -58,16 +85,29 @@ export async function sendEmailSMTP(
   userObj: UserDocument,
   appName: string,
 ): Promise<string> {
+  console.log(
+    `function to send email (${template}) to ${recipient} from ${emailEnv.username()}`,
+  );
   const smtpTransport = await resolveTransporter();
+  console.log('Email transporter resolved');
   const fromUser = emailEnv.username();
 
   const build: EmailTemplateGenerator | undefined = templates[template];
   if (!build) throw new Error(`Unknown email template: ${String(template)}`);
+  console.log(`Using email template: ${String(template)}`);
 
-  const msg: EmailTemplateHash = build(recipient, host, token, userObj, fromUser, appName);
+  const msg: EmailTemplateHash = build(
+    recipient,
+    host,
+    token,
+    userObj,
+    fromUser,
+    appName,
+  );
+  console.log('Built email message:', msg);
 
   await new Promise<void>((resolve, reject) =>
-    smtpTransport.sendMail(msg, (err) => (err ? reject(err) : resolve())),
+    smtpTransport.sendMail(msg, err => (err ? reject(err) : resolve())),
   );
 
   const okMsg = `Email (${template}) sent successfully to ${recipient} from ${fromUser}`;
@@ -87,12 +127,21 @@ export async function sendEmailsToAdmins(
         ? { isTrashed: false, accountType: 'A', email: { $ne: null } }
         : { isTrashed: false, isAdmin: true, email: { $ne: null } };
 
-    const admins: UserDocument[] = await User.find(adminCrit).lean().exec();
+    const admins: UserDocument[] = await User.find(adminCrit)
+      .lean()
+      .exec();
     if (!Array.isArray(admins)) return;
 
     for (const user of admins) {
       if (user.email) {
-        void sendEmailSMTP(user.email, host, template, null, relatedUser, appName);
+        void sendEmailSMTP(
+          user.email,
+          host,
+          template,
+          null,
+          relatedUser,
+          appName,
+        );
       }
     }
   } catch (err) {
