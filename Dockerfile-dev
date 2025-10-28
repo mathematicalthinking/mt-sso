@@ -1,7 +1,7 @@
-FROM node:14.21.3@sha256:2cafa3fbb0b6529ee4726b4f599ec27ee557ea3dea7019182323b3779959927f
+FROM node:20
 RUN apt update -y && apt upgrade -y && apt install -y curl wget bash iputils-ping net-tools dnsutils zip unzip python3 && ln -sf python3 /usr/bin/python
 
-RUN npm install -g npm@8.3.1 typescript@3.5.2
+RUN npm install -g npm@10 typescript@3.5.2
 
 WORKDIR /web
 # use changes to package.json to force Docker not to use the cache
