@@ -60,7 +60,14 @@ async function resolveTransporter(): Promise<Mail> {
       host,
       port,
       secure,
-      auth: { type: 'OAuth2', user: username, accessToken },
+      auth: {
+        type: 'OAuth2',
+        user: username,
+        clientId: emailEnv.clientId(),
+        clientSecret: emailEnv.clientSecret(),
+        accessToken,
+        expires: Date.now() + 3600000, // 1 hour from now
+      },
     });
   }
 
