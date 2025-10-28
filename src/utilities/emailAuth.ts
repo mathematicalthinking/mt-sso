@@ -15,7 +15,7 @@ export async function getMsAppAccessToken(): Promise<string> {
     client_id: clientId,
     client_secret: clientSecret,
     grant_type: 'client_credentials',
-    scope: 'https://outlook.office365.com/.default',
+    scope: 'https://outlook.office365.com/SMTP.Send',
   });
 
   const res = await fetch(url, {
@@ -25,9 +25,11 @@ export async function getMsAppAccessToken(): Promise<string> {
   });
 
   if (!res.ok) {
-    throw new Error(`Token request failed (${res.status}): ${await res.text()}`);
+    throw new Error(
+      `Token request failed (${res.status}): ${await res.text()}`,
+    );
   }
 
-  const data = await res.json() as { access_token: string };
+  const data = (await res.json()) as { access_token: string };
   return data.access_token;
 }
