@@ -55,16 +55,15 @@ async function resolveTransporter(): Promise<Mail> {
       secure,
       username,
       tokenLength: accessToken.length,
+      tokenPrefix: accessToken.substring(0, 20) + '...',
     });
     return nodemailer.createTransport({
       host,
       port,
       secure,
       auth: {
-        type: 'oauth2',
+        type: 'OAuth2',
         user: username,
-        clientId: emailEnv.clientId(),
-        clientSecret: emailEnv.clientSecret(),
         accessToken,
         expires: Date.now() + 3600000, // 1 hour from now
       },
