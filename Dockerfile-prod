@@ -1,8 +1,8 @@
-FROM node:14.21.3-alpine@sha256:4e84c956cd276af9ed14a8b2939a734364c2b0042485e90e1b97175e73dfd548 AS appbuild
+FROM node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435 AS appbuild
 RUN apk update
 RUN apk add --no-cache build-base python3 && ln -sf python3 /usr/bin/python
 
-RUN npm install -g npm@8.3.1 typescript@3.5.2
+RUN npm install -g npm@10 typescript@3.5.2
 
 WORKDIR /build
 # use changes to package.json to force Docker not to use the cache
@@ -19,7 +19,7 @@ COPY . ./
 RUN tsc
 
 # make a 2 part Dockerfile in order reduce overall image size of the final prod image
-FROM node:14.21.3-alpine@sha256:4e84c956cd276af9ed14a8b2939a734364c2b0042485e90e1b97175e73dfd548
+FROM node:20-alpine@sha256:6178e78b972f79c335df281f4b7674a2d85071aae2af020ffa39f0a770265435
 RUN apk update && apk upgrade && apk add curl --no-cache && apk add --no-cache build-base python3 && ln -sf python3 /usr/bin/python
 
 # create dirs in the container & set permissions so node user can access them
