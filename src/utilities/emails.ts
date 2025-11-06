@@ -55,16 +55,15 @@ async function resolveTransporter(): Promise<Mail> {
       secure,
       username,
       tokenLength: accessToken.length,
+      tokenPrefix: accessToken.substring(0, 20) + '...',
     });
     return nodemailer.createTransport({
       host,
       port,
       secure,
       auth: {
-        type: 'oauth2',
+        type: 'OAuth2',
         user: username,
-        clientId: emailEnv.clientId(),
-        clientSecret: emailEnv.clientSecret(),
         accessToken,
         expires: Date.now() + 3600000, // 1 hour from now
       },
@@ -120,7 +119,15 @@ export async function sendEmailSMTP(
   console.log('Built email message:', msg);
 
   await new Promise<void>((resolve, reject) =>
-    smtpTransport.sendMail(msg, err => (err ? reject(err) : resolve())),
+    smtpTransport.sendMail(msg, (err, info) => {
+      if (err) {
+        console.error('SendMail error details:', err);
+        reject(err);
+      } else {
+        console.log('SendMail success info:', info);
+        resolve();
+      }
+    }),
   );
 
   const okMsg = `Email (${template}) sent successfully to ${recipient} from ${fromUser}`;
