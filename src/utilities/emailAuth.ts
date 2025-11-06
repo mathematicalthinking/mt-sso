@@ -15,7 +15,7 @@ export async function getMsAppAccessToken(): Promise<string> {
     client_id: clientId,
     client_secret: clientSecret,
     grant_type: 'client_credentials',
-    scope: 'https://outlook.office365.com/SMTP.Send',
+    scope: 'https://outlook.office365.com/.default',
   });
 
   const res = await fetch(url, {
