@@ -61,7 +61,7 @@ async function resolveTransporter(): Promise<Mail> {
       port,
       secure,
       auth: {
-        type: 'OAuth2',
+        type: 'oauth2',
         user: username,
         clientId: emailEnv.clientId(),
         clientSecret: emailEnv.clientSecret(),
@@ -97,6 +97,12 @@ export async function sendEmailSMTP(
   );
   const smtpTransport = await resolveTransporter();
   console.log('Email transporter resolved');
+  try {
+    await smtpTransport.verify();
+    console.log('Server is ready to take our messages');
+  } catch (err) {
+    console.error('Verification failed', err);
+  }
   const fromUser = emailEnv.username();
 
   const build: EmailTemplateGenerator | undefined = templates[template];
