@@ -119,7 +119,15 @@ export async function sendEmailSMTP(
   console.log('Built email message:', msg);
 
   await new Promise<void>((resolve, reject) =>
-    smtpTransport.sendMail(msg, err => (err ? reject(err) : resolve())),
+    smtpTransport.sendMail(msg, (err, info) => {
+      if (err) {
+        console.error('SendMail error details:', err);
+        reject(err);
+      } else {
+        console.log('SendMail success info:', info);
+        resolve();
+      }
+    }),
   );
 
   const okMsg = `Email (${template}) sent successfully to ${recipient} from ${fromUser}`;
