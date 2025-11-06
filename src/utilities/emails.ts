@@ -16,9 +16,7 @@ import Mail = require('nodemailer/lib/mailer');
 type TemplateName = keyof typeof templates;
 
 async function resolveTransporter(): Promise<Mail> {
-  console.log('Resolving email transporter');
   if (process.env.NODE_ENV === 'test') {
-    console.log('Using ethereal email account for testing');
     const account = await new Promise<nodemailer.TestAccount>(
       (resolve, reject) =>
         nodemailer.createTestAccount((err, acc) =>
@@ -37,8 +35,6 @@ async function resolveTransporter(): Promise<Mail> {
     });
   }
 
-  console.log('Using production email account');
-
   const method = emailEnv.method();
   const username = emailEnv.username();
   const host = emailEnv.host();
@@ -46,17 +42,16 @@ async function resolveTransporter(): Promise<Mail> {
   const secure = emailEnv.secure();
 
   if (method === 'oauth2_cc') {
-    console.log('Using OAuth2 Client Credentials for email authentication');
     const accessToken = await getMsAppAccessToken();
-    console.log('Obtained access token for OAuth2 Client Credentials');
-    console.log('Email config:', {
-      host,
-      port,
-      secure,
-      username,
-      tokenLength: accessToken.length,
-      tokenPrefix: accessToken.substring(0, 20) + '...',
-    });
+    // leaving this log here for future debugging
+    // console.log('Email config:', {
+    //   host,
+    //   port,
+    //   secure,
+    //   username,
+    //   tokenLength: accessToken.length,
+    //   tokenPrefix: accessToken.substring(0, 20) + '...',
+    // });
     return nodemailer.createTransport({
       host,
       port,
@@ -91,11 +86,7 @@ export async function sendEmailSMTP(
   userObj: UserDocument,
   appName: string,
 ): Promise<string> {
-  console.log(
-    `function to send email (${template}) to ${recipient} from ${emailEnv.username()}`,
-  );
   const smtpTransport = await resolveTransporter();
-  console.log('Email transporter resolved');
   try {
     await smtpTransport.verify();
     console.log('Server is ready to take our messages');
@@ -106,7 +97,6 @@ export async function sendEmailSMTP(
 
   const build: EmailTemplateGenerator | undefined = templates[template];
   if (!build) throw new Error(`Unknown email template: ${String(template)}`);
-  console.log(`Using email template: ${String(template)}`);
 
   const msg: EmailTemplateHash = build(
     recipient,
@@ -116,7 +106,6 @@ export async function sendEmailSMTP(
     fromUser,
     appName,
   );
-  console.log('Built email message:', msg);
 
   await new Promise<void>((resolve, reject) =>
     smtpTransport.sendMail(msg, (err, info) => {
@@ -131,7 +120,6 @@ export async function sendEmailSMTP(
   );
 
   const okMsg = `Email (${template}) sent successfully to ${recipient} from ${fromUser}`;
-  console.log('email success:', okMsg);
   return okMsg;
 }
 
