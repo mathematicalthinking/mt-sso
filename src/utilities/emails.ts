@@ -43,6 +43,7 @@ async function resolveTransporter(): Promise<Mail> {
 
   if (method === 'oauth2_cc') {
     const accessToken = await getMsAppAccessToken();
+    // leaving this log here for future debugging
     // console.log('Email config:', {
     //   host,
     //   port,
