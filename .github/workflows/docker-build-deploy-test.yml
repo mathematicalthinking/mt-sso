@@ -1,4 +1,4 @@
-name: Docker Image Build & Push & Deploy to TEST ENV 
+name: Docker Image Build & Push & Deploy to TEST ENV
 
 on:
   push:
