@@ -32,7 +32,7 @@ jobs:
       continue-on-error: true
       run: |
         curl -sSf -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Build Started - ${{ github.workflow }} #${{ github.run_number }} (<${{ env.RUN_URL }}|Open>)\"}" \
+          --data "{\"text\":\"Build started - ${{ github.repository }}@${{ github.ref_name }} -> ${{ env.STACK_NAME }}_${{ env.SERVICE }} (run #${{ github.run_number }}, <${{ env.RUN_URL }}|Open>)\"}" \
           "$SLACK_WEBHOOK_URL"
 
     - name: Checkout the Repo
@@ -123,7 +123,7 @@ jobs:
       continue-on-error: true
       run: |
         curl -sSf -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Build deployed successfully - ${{ github.workflow }} #${{ github.run_number }} (<${{ env.RUN_URL }}|Open>)\"}" \
+          --data "{\"text\":\"Deployed - ${{ github.repository }}@${{ github.ref_name }} -> ${{ env.STACK_NAME }}_${{ env.SERVICE }} (run #${{ github.run_number }}, <${{ env.RUN_URL }}|Open>)\"}" \
           "$SLACK_WEBHOOK_URL"
 
     - name: Notify Slack - failure
@@ -131,5 +131,5 @@ jobs:
       continue-on-error: true
       run: |
         curl -sSf -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"Build failed - ${{ github.workflow }} #${{ github.run_number }} (<${{ env.RUN_URL }}|Open>)\"}" \
+          --data "{\"text\":\"FAILED - ${{ github.repository }}@${{ github.ref_name }} -> ${{ env.STACK_NAME }}_${{ env.SERVICE }} (run #${{ github.run_number }}, <${{ env.RUN_URL }}|Open>)\"}" \
           "$SLACK_WEBHOOK_URL"
